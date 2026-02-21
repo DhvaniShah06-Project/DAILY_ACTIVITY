@@ -1,0 +1,194 @@
+/**
+ * Core Philosophy: This ruleset enforces a strict user-ownership security model. All user-generated data is
+ * isolated within a user-specific path, ensuring that a user can only ever access their own information.
+ * This approach guarantees data privacy and prevents any user from reading or writing another user's data.
+ *
+ * Data Structure: All data is organized hierarchically under the `/users/{userId}` collection. Each type
+ * of user data (e.g., tasks, bills, budgets) is stored in a separate subcollection under the user's
+ * unique ID. This structure makes security rules simple, performant, and easy to reason about.
+ *
+ * Key Security Decisions:
+ * - Default Deny: All operations are denied by default. Access is only granted through explicit allow statements.
+ * - User Data Isolation: Access to any document or collection is strictly limited to the user ID specified
+ *   in the path (`/users/{userId}`). This prevents any form of cross-user data access.
+ * - No User Listing: The top-level `/users` collection cannot be queried, and individual user documents
+ *   at `/users/{userId}` are inaccessible. This protects user privacy by preventing enumeration of all users.
+ * - No Public Data: There are no publicly readable or writable collections in this ruleset. All access
+ *   requires user authentication.
+ *
+ * Denormalization for Authorization: The security model relies on path-based authorization, which is the most
+ * performant method. The user's UID is part of the document path, eliminating the need for slow and costly
+ * cross-document `get()` calls to check for ownership. For nested documents, such as a budget category limit,
+ * the rules still leverage the `userId` from the path, maintaining high performance and strong security.
+ *
+ * Structural Segregation: The data model naturally segregates each user's data into its own document tree.
+ * This is the most secure and performant way to handle private user data, especially for list operations,
+ * as queries are inherently scoped to the authenticated user's data path.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions for improved readability and reusability.
+
+    /**
+     * Checks if a user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Validates that the currently authenticated user's UID matches the
+     * document owner's UID from the path. This is the primary ownership check.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * Validates ownership for an existing document. Used for update and delete
+     * operations to ensure the document exists before attempting modification.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+
+    /**
+     * Validates the relational integrity of a BudgetCategoryLimit on creation.
+     * Ensures the budgetId in the document body matches the budgetId in the path.
+     */
+    function isValidBudgetCategoryLimitCreate(budgetId) {
+      return request.resource.data.budgetId == budgetId;
+    }
+
+    /**
+     * Validates the immutability of the budgetId field on a BudgetCategoryLimit update.
+     * Prevents re-assigning a category limit to a different budget.
+     */
+    function isValidBudgetCategoryLimitUpdate() {
+      return request.resource.data.budgetId == resource.data.budgetId;
+    }
+
+    /**
+     * @description Prevents reads or writes to the user profile document itself. This is a secure default
+     *              to prevent users from storing arbitrary data at this path if no user profile entity is defined.
+     * @path        /users/{userId}
+     * @allow       (none) - All operations are explicitly denied.
+     * @deny        A user (uid: 'user-abc') tries to (get) or (create) their own document at /users/user-abc.
+     * @principle   Enforces a secure default by locking down paths that do not correspond to a defined data entity.
+     */
+    match /users/{userId} {
+      allow get: if false;
+      allow list: if false;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    /**
+     * @description Secures access to a user's private tasks.
+     * @path        /users/{userId}/tasks/{taskId}
+     * @allow       A user (uid: 'user-abc') tries to (create) a task at /users/user-abc/tasks/task-123.
+     * @deny        A user (uid: 'user-xyz') tries to (get) a task at /users/user-abc/tasks/task-123.
+     * @principle   Restricts access to a user's own data tree based on the authenticated UID.
+     */
+    match /users/{userId}/tasks/{taskId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Secures access to a user's private bills.
+     * @path        /users/{userId}/bills/{billId}
+     * @allow       A user (uid: 'user-abc') tries to (create) a bill at /users/user-abc/bills/bill-123.
+     * @deny        A user (uid: 'user-xyz') tries to (list) bills at /users/user-abc/bills.
+     * @principle   Restricts access to a user's own data tree based on the authenticated UID.
+     */
+    match /users/{userId}/bills/{billId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Secures access to a user's private expenses.
+     * @path        /users/{userId}/expenses/{expenseId}
+     * @allow       A user (uid: 'user-abc') tries to (delete) an expense at /users/user-abc/expenses/exp-123.
+     * @deny        A user (uid: 'user-xyz') tries to (update) an expense at /users/user-abc/expenses/exp-123.
+     * @principle   Restricts access to a user's own data tree based on the authenticated UID.
+     */
+    match /users/{userId}/expenses/{expenseId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Secures access to a user's private budgets.
+     * @path        /users/{userId}/budgets/{budgetId}
+     * @allow       A user (uid: 'user-abc') tries to (get) a budget at /users/user-abc/budgets/budget-123.
+     * @deny        An anonymous user tries to (create) a budget at /users/user-abc/budgets/budget-123.
+     * @principle   Restricts access to a user's own data tree based on the authenticated UID.
+     */
+    match /users/{userId}/budgets/{budgetId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Secures a user's budget category limits, which are nested under a budget.
+     * @path        /users/{userId}/budgets/{budgetId}/categoryLimits/{limitId}
+     * @allow       A user (uid: 'user-abc') tries to (create) a limit at /users/user-abc/budgets/budget-123/categoryLimits/limit-456, providing { budgetId: 'budget-123' } in the data.
+     * @deny        A user (uid: 'user-abc') tries to (create) a limit with a mismatched budgetId: (create) at /users/user-abc/budgets/budget-123/... with data { budgetId: 'budget-789' }.
+     * @principle   Ensures ownership via path and validates relational integrity between the document and its parent.
+     */
+    match /users/{userId}/budgets/{budgetId}/categoryLimits/{limitId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidBudgetCategoryLimitCreate(budgetId);
+      allow update: if isExistingOwner(userId) && isValidBudgetCategoryLimitUpdate();
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Secures access to a user's private savings goals.
+     * @path        /users/{userId}/savingsGoals/{goalId}
+     * @allow       A user (uid: 'user-abc') tries to (list) goals at /users/user-abc/savingsGoals.
+     * @deny        A user (uid: 'user-xyz') tries to (get) a goal at /users/user-abc/savingsGoals/goal-123.
+     * @principle   Restricts access to a user's own data tree based on the authenticated UID.
+     */
+    match /users/{userId}/savingsGoals/{goalId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Secures access to a user's private location-based reminders.
+     * @path        /users/{userId}/locationReminders/{reminderId}
+     * @allow       A user (uid: 'user-abc') tries to (create) a reminder at /users/user-abc/locationReminders/rem-123.
+     * @deny        A user (uid: 'user-xyz') tries to (delete) a reminder at /users/user-abc/locationReminders/rem-123.
+     * @principle   Restricts access to a user's own data tree based on the authenticated UID.
+     */
+    match /users/{userId}/locationReminders/{reminderId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+  }
+}

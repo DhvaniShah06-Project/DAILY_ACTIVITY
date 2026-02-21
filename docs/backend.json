@@ -1,0 +1,573 @@
+{
+  "entities": {
+    "Task": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Task",
+      "type": "object",
+      "description": "Represents a single household task that needs to be completed.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Task entity."
+        },
+        "title": {
+          "type": "string",
+          "description": "The concise name or title of the task."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the task, including any specific instructions.",
+          "format": "text"
+        },
+        "category": {
+          "type": "string",
+          "description": "The category the task belongs to (e.g., 'Cooking', 'Cleaning', 'Shopping', 'Maintenance')."
+        },
+        "dueDate": {
+          "type": "string",
+          "description": "The date and time by which the task is expected to be completed.",
+          "format": "date-time"
+        },
+        "isCompleted": {
+          "type": "boolean",
+          "description": "Indicates whether the task has been marked as completed."
+        },
+        "completedDate": {
+          "type": "string",
+          "description": "The date and time when the task was completed. Null if not completed.",
+          "format": "date-time"
+        },
+        "isRepeating": {
+          "type": "boolean",
+          "description": "Indicates if the task is a recurring task."
+        },
+        "repeatFrequency": {
+          "type": "string",
+          "description": "Specifies how often a recurring task repeats (e.g., 'DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY', 'CUSTOM'). Required if isRepeating is true."
+        },
+        "repeatEndsOn": {
+          "type": "string",
+          "description": "The date when a repeating task should stop repeating. Null if it repeats indefinitely.",
+          "format": "date-time"
+        },
+        "suggestedDishName": {
+          "type": "string",
+          "description": "A dish name suggested by AI for cooking tasks, if applicable. (Optional)",
+          "format": "text"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "The date and time when the task was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "The date and time when the task was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "category",
+        "dueDate",
+        "isCompleted",
+        "isRepeating",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Bill": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Bill",
+      "type": "object",
+      "description": "Represents a household bill that needs to be tracked and paid.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Bill entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the bill (e.g., 'Electricity', 'Water', 'Rent', 'Internet')."
+        },
+        "amount": {
+          "type": "number",
+          "description": "The total amount of the bill."
+        },
+        "dueDate": {
+          "type": "string",
+          "description": "The date by which the bill is due.",
+          "format": "date-time"
+        },
+        "isPaid": {
+          "type": "boolean",
+          "description": "Indicates whether the bill has been paid."
+        },
+        "paidDate": {
+          "type": "string",
+          "description": "The date when the bill was paid. Null if not paid.",
+          "format": "date-time"
+        },
+        "paymentMethod": {
+          "type": "string",
+          "description": "The method used or planned to be used for payment (e.g., 'Bank Transfer', 'Credit Card', 'Cash')."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Optional notes or remarks about the bill.",
+          "format": "text"
+        },
+        "recurrence": {
+          "type": "string",
+          "description": "How often this bill recurs (e.g., 'ONE_TIME', 'MONTHLY', 'QUARTERLY', 'ANNUALLY')."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "The date and time when the bill record was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "The date and time when the bill record was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "amount",
+        "dueDate",
+        "isPaid",
+        "paymentMethod",
+        "recurrence",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Expense": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Expense",
+      "type": "object",
+      "description": "Represents a single expense incurred by the household.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Expense entity."
+        },
+        "amount": {
+          "type": "number",
+          "description": "The amount of the expense."
+        },
+        "category": {
+          "type": "string",
+          "description": "The category of the expense (e.g., 'Grocery', 'Transport', 'Dining Out', 'Utilities', 'Entertainment')."
+        },
+        "description": {
+          "type": "string",
+          "description": "Optional notes or a brief description of the expense.",
+          "format": "text"
+        },
+        "date": {
+          "type": "string",
+          "description": "The date when the expense occurred.",
+          "format": "date-time"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "The date and time when the expense record was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "The date and time when the expense record was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "amount",
+        "category",
+        "date",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Budget": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Budget",
+      "type": "object",
+      "description": "Defines a financial budget for a specific period, allowing users to track overall spending.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Budget entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "A descriptive name for the budget (e.g., 'Monthly Household Budget', 'Vacation Savings')."
+        },
+        "startDate": {
+          "type": "string",
+          "description": "The starting date of the budget period.",
+          "format": "date-time"
+        },
+        "endDate": {
+          "type": "string",
+          "description": "The ending date of the budget period.",
+          "format": "date-time"
+        },
+        "totalAllocatedAmount": {
+          "type": "number",
+          "description": "The total amount allocated for this budget period."
+        },
+        "isCurrent": {
+          "type": "boolean",
+          "description": "Indicates if this is the currently active budget."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "The date and time when the budget record was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "The date and time when the budget record was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "startDate",
+        "endDate",
+        "totalAllocatedAmount",
+        "isCurrent",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "BudgetCategoryLimit": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "BudgetCategoryLimit",
+      "type": "object",
+      "description": "Sets a spending limit for a specific category within a budget.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the BudgetCategoryLimit entity."
+        },
+        "budgetId": {
+          "type": "string",
+          "description": "Reference to the Budget this limit belongs to. (Relationship: Budget 1:N BudgetCategoryLimit)"
+        },
+        "category": {
+          "type": "string",
+          "description": "The expense category to which this limit applies (e.g., 'Grocery', 'Transport')."
+        },
+        "limitAmount": {
+          "type": "number",
+          "description": "The maximum amount allocated for this category within the budget."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "The date and time when the budget category limit was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "The date and time when the budget category limit was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "budgetId",
+        "category",
+        "limitAmount",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "SavingsGoal": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "SavingsGoal",
+      "type": "object",
+      "description": "Represents a financial goal the user is saving towards.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the SavingsGoal entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "A descriptive name for the savings goal (e.g., 'Emergency Fund', 'New Appliance')."
+        },
+        "targetAmount": {
+          "type": "number",
+          "description": "The total amount the user aims to save."
+        },
+        "currentAmount": {
+          "type": "number",
+          "description": "The current amount saved towards the goal."
+        },
+        "targetDate": {
+          "type": "string",
+          "description": "The desired date by which the savings goal should be achieved. Null if no specific date.",
+          "format": "date-time"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Optional notes or details about the savings goal.",
+          "format": "text"
+        },
+        "isAchieved": {
+          "type": "boolean",
+          "description": "Indicates whether the savings goal has been reached."
+        },
+        "achievedDate": {
+          "type": "string",
+          "description": "The date when the savings goal was achieved. Null if not yet achieved.",
+          "format": "date-time"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "The date and time when the savings goal was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "The date and time when the savings goal was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "targetAmount",
+        "currentAmount",
+        "isAchieved",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "LocationReminder": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "LocationReminder",
+      "type": "object",
+      "description": "Represents a reminder that triggers when the user enters or exits a specified geographical location.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the LocationReminder entity."
+        },
+        "title": {
+          "type": "string",
+          "description": "A brief title for the location-based reminder (e.g., 'Grocery Shopping', 'Pick up Dry Cleaning')."
+        },
+        "message": {
+          "type": "string",
+          "description": "The detailed message displayed when the reminder is triggered.",
+          "format": "text"
+        },
+        "latitude": {
+          "type": "number",
+          "description": "The latitude coordinate of the reminder location."
+        },
+        "longitude": {
+          "type": "number",
+          "description": "The longitude coordinate of the reminder location."
+        },
+        "radiusMeters": {
+          "type": "number",
+          "description": "The radius in meters around the specified location where the reminder should trigger."
+        },
+        "isActive": {
+          "type": "boolean",
+          "description": "Indicates whether the location reminder is currently active."
+        },
+        "associatedTaskId": {
+          "type": "string",
+          "description": "Reference to a Task if this reminder is specifically tied to a task. (Relationship: Task 1:N LocationReminder)",
+          "format": "text"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "The date and time when the location reminder was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "The date and time when the location reminder was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "message",
+        "latitude",
+        "longitude",
+        "radiusMeters",
+        "isActive",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}/tasks/{taskId}",
+        "definition": {
+          "entityName": "Task",
+          "schema": {
+            "$ref": "#/backend/entities/Task"
+          },
+          "description": "Stores individual household tasks created and managed by a specific user. The 'userId' in the path serves as the owner identifier, ensuring authorization independence.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique ID of the authenticated user (request.auth.uid) who owns this task."
+            },
+            {
+              "name": "taskId",
+              "description": "The unique ID of the task."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/bills/{billId}",
+        "definition": {
+          "entityName": "Bill",
+          "schema": {
+            "$ref": "#/backend/entities/Bill"
+          },
+          "description": "Stores household bills tracked by a specific user. The 'userId' in the path serves as the owner identifier, ensuring authorization independence.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique ID of the authenticated user (request.auth.uid) who owns this bill."
+            },
+            {
+              "name": "billId",
+              "description": "The unique ID of the bill."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/expenses/{expenseId}",
+        "definition": {
+          "entityName": "Expense",
+          "schema": {
+            "$ref": "#/backend/entities/Expense"
+          },
+          "description": "Stores individual expenses logged by a specific user. The 'userId' in the path serves as the owner identifier, ensuring authorization independence.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique ID of the authenticated user (request.auth.uid) who logged this expense."
+            },
+            {
+              "name": "expenseId",
+              "description": "The unique ID of the expense."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/budgets/{budgetId}",
+        "definition": {
+          "entityName": "Budget",
+          "schema": {
+            "$ref": "#/backend/entities/Budget"
+          },
+          "description": "Stores financial budgets defined by a specific user. The 'userId' in the path serves as the owner identifier, ensuring authorization independence.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique ID of the authenticated user (request.auth.uid) who owns this budget."
+            },
+            {
+              "name": "budgetId",
+              "description": "The unique ID of the budget."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/budgets/{budgetId}/categoryLimits/{limitId}",
+        "definition": {
+          "entityName": "BudgetCategoryLimit",
+          "schema": {
+            "$ref": "#/backend/entities/BudgetCategoryLimit"
+          },
+          "description": "Stores spending limits for categories within a user's specific budget. Each document includes a denormalized 'ownerId' field matching the 'userId' from the path, ensuring authorization independence without requiring parent document reads.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique ID of the authenticated user (request.auth.uid) who owns the parent budget and this limit."
+            },
+            {
+              "name": "budgetId",
+              "description": "The unique ID of the parent budget to which this category limit belongs."
+            },
+            {
+              "name": "limitId",
+              "description": "The unique ID of the budget category limit."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/savingsGoals/{goalId}",
+        "definition": {
+          "entityName": "SavingsGoal",
+          "schema": {
+            "$ref": "#/backend/entities/SavingsGoal"
+          },
+          "description": "Stores financial savings goals for a specific user. The 'userId' in the path serves as the owner identifier, ensuring authorization independence.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique ID of the authenticated user (request.auth.uid) who owns this savings goal."
+            },
+            {
+              "name": "goalId",
+              "description": "The unique ID of the savings goal."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/locationReminders/{reminderId}",
+        "definition": {
+          "entityName": "LocationReminder",
+          "schema": {
+            "$ref": "#/backend/entities/LocationReminder"
+          },
+          "description": "Stores location-based reminders for a specific user, which can optionally be associated with a task. The 'userId' in the path serves as the owner identifier, ensuring authorization independence.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique ID of the authenticated user (request.auth.uid) who owns this reminder."
+            },
+            {
+              "name": "reminderId",
+              "description": "The unique ID of the location reminder."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The recommended Firestore structure prioritizes user data isolation and strong authorization independence, adhering strictly to the CORE DESIGN PRINCIPLES and DESIGN STRATEGY MANDATES. All user-specific data is nested under a `/users/{userId}` top-level collection, leveraging path-based ownership for inherently secure and debuggable rules.\n\n**Authorization Independence:** This is achieved by embedding the `userId` in the document path for all primary collections (e.g., `/users/{userId}/tasks/{taskId}`). For nested subcollections like `categoryLimits` under `budgets`, the `ownerId` (which is the `userId`) will be explicitly denormalized within each `BudgetCategoryLimit` document. This ensures that security rules for *any* document can directly check `request.auth.uid == resource.data.ownerId` (or `request.auth.uid == userId` for top-level collections), completely eliminating the need for `get()` calls to parent documents. This design pattern allows for atomic write operations and simplifies rule logic considerably, making it robust against race conditions and easier to debug.\n\n**QAPs (Query as Authorization Patterns):** The `/users/{userId}/...` hierarchical structure inherently supports secure `list` operations. A security rule such as `allow list: if request.auth.uid == userId;` will ensure that a user can only query and retrieve documents from their own designated path. The structural segregation of data by user makes it impossible for a query to accidentally expose another user's data, as the `userId` wildcard acts as a mandatory filter that matches the authenticated user's ID. Each collection (`tasks`, `bills`, `expenses`, `budgets`, `savingsGoals`, `locationReminders`) operates with a homogeneous security posture, owned exclusively by the `userId` in the path, thus simplifying rules for `list` as well as `get`, `create`, `update`, and `delete` operations."
+  }
+}
