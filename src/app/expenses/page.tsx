@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Expense } from '@/lib/types';
 import { expenses as initialExpenses, budget as initialBudget } from '@/lib/data';
 import { PlusCircle } from 'lucide-react';
@@ -20,6 +20,12 @@ export default function ExpensesPage() {
   const [expenses, setExpenses] = useState<Expense[]>(initialExpenses);
   const [budget, setBudget] = useState(initialBudget);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  useEffect(() => {
+    if (window.location.hash === '#add') {
+      setIsDialogOpen(true);
+    }
+  }, []);
 
   const handleLogExpense = (newExpense: Omit<Expense, 'id'>) => {
     const expenseToAdd: Expense = {
@@ -79,11 +85,19 @@ export default function ExpensesPage() {
           imageAlt="Empty expense list"
           imageHint="no money"
         >
-          <DialogTrigger asChild>
-            <Button>
-              <PlusCircle className="mr-2 h-4 w-4" /> Log Expense
-            </Button>
-          </DialogTrigger>
+           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+                <Button>
+                <PlusCircle className="mr-2 h-4 w-4" /> Log Expense
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                <DialogTitle className="font-headline">Log a new expense</DialogTitle>
+                </DialogHeader>
+                <ExpenseForm onSubmit={handleLogExpense} />
+            </DialogContent>
+          </Dialog>
         </EmptyState>
       )}
     </div>

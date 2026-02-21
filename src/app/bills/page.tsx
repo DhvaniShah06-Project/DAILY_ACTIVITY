@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Bill } from '@/lib/types';
 import { bills as initialBills } from '@/lib/data';
 import { PlusCircle } from 'lucide-react';
@@ -19,6 +19,12 @@ import { BillForm } from './components/bill-form';
 export default function BillsPage() {
   const [bills, setBills] = useState<Bill[]>(initialBills);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  useEffect(() => {
+    if (window.location.hash === '#add') {
+      setIsDialogOpen(true);
+    }
+  }, []);
 
   const handleAddBill = (newBill: Omit<Bill, 'id' | 'status'>) => {
     const billToAdd: Bill = {
@@ -82,11 +88,19 @@ export default function BillsPage() {
           imageAlt="Empty bills list"
           imageHint="empty wallet"
         >
-          <DialogTrigger asChild>
-            <Button>
-              <PlusCircle className="mr-2 h-4 w-4" /> Add Bill
-            </Button>
-          </DialogTrigger>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+                <Button>
+                <PlusCircle className="mr-2 h-4 w-4" /> Add Bill
+                </Button>
+            </DialogTrigger>
+             <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                <DialogTitle className="font-headline">Add a new bill</DialogTitle>
+                </DialogHeader>
+                <BillForm onSubmit={handleAddBill} />
+            </DialogContent>
+          </Dialog>
         </EmptyState>
       )}
     </div>

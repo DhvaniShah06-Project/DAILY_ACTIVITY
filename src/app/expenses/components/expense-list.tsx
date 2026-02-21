@@ -36,7 +36,7 @@ export function ExpenseList({ expenses }: ExpenseListProps) {
                   <p className="text-sm text-muted-foreground">{expense.notes || format(expense.date, 'PPP')}</p>
                 </div>
                 <div className="text-right">
-                  <p className="font-bold text-lg">-${expense.amount.toFixed(2)}</p>
+                  <p className="font-bold text-lg text-destructive">-${expense.amount.toFixed(2)}</p>
                 </div>
               </div>
             );

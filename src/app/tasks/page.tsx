@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Task } from '@/lib/types';
 import { tasks as initialTasks } from '@/lib/data';
 import { PlusCircle } from 'lucide-react';
@@ -21,6 +21,12 @@ export default function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
+
+  useEffect(() => {
+    if (window.location.hash === '#add') {
+      setIsDialogOpen(true);
+    }
+  }, []);
 
   const handleAddTask = (newTask: Omit<Task, 'id' | 'isCompleted'>) => {
     const taskToAdd: Task = {
@@ -59,12 +65,9 @@ export default function TasksPage() {
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button
-              size="lg"
-              className="rounded-full w-12 h-12 p-0 aspect-square"
-            >
-              <PlusCircle className="h-6 w-6" />
-              <span className="sr-only">Add Task</span>
+            <Button size="lg">
+              <PlusCircle className="mr-2 h-5 w-5" />
+              Add Task
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[425px]">
