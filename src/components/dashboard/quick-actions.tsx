@@ -25,9 +25,9 @@ export function QuickActions() {
   return (
     <Card>
       <CardContent className="p-4">
-        <div className="flex flex-col items-stretch gap-4 sm:flex-row sm:items-center">
+        <div className="flex flex-col items-stretch gap-4 sm:flex-row sm:items-center sm:justify-between">
             <h3 className="font-headline text-lg font-semibold text-center sm:text-left">Quick Actions</h3>
-            <div className="grid grid-cols-3 gap-2 sm:flex-1">
+            <div className="grid grid-cols-3 gap-2">
                 {actions.map(({ href, label, icon: Icon }) => (
                 <Button
                     key={href}
