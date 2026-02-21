@@ -1,5 +1,6 @@
 'use client';
 
+import { usePathname } from 'next/navigation';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Bell, Globe, LogOut } from 'lucide-react';
@@ -16,18 +17,40 @@ import { useUser } from '@/firebase';
 
 export function AppHeader() {
   const { user, signOut } = useUser();
+  const pathname = usePathname();
 
   const getInitials = (email?: string | null) => {
     if (!email) return 'U';
     return email.charAt(0).toUpperCase();
   };
 
+  const getPageTitle = (path: string) => {
+    if (path === '/') return 'Dashboard';
+    const page = path.split('/')[1];
+    switch (page) {
+      case 'tasks':
+        return 'My Tasks';
+      case 'bills':
+        return 'Bills';
+      case 'expenses':
+        return 'Expenses';
+      case 'reports':
+        return 'Reports';
+      case 'reminders':
+        return 'Smart Reminders';
+      default:
+        return page.charAt(0).toUpperCase() + page.slice(1);
+    }
+  };
+  
+  const pageTitle = getPageTitle(pathname);
+
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6 lg:px-8">
       <div className="flex items-center gap-4">
         <SidebarTrigger className="md:hidden" />
         <div>
-          <h2 className="text-lg font-semibold font-headline">Dashboard</h2>
+          <h2 className="text-lg font-semibold font-headline">{pageTitle}</h2>
         </div>
       </div>
       <div className="flex items-center gap-4">
