@@ -1,7 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/auth-context';
+import { useAuth, useUser } from '@/firebase';
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+} from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -23,7 +27,8 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn, signUp, user, loading } = useAuth();
+  const auth = useAuth(); // gets the auth instance
+  const { user, loading } = useUser(); // gets user state
   const { toast } = useToast();
   const router = useRouter();
 
@@ -33,12 +38,14 @@ export default function LoginPage() {
     }
   }, [user, loading, router]);
 
-
   const handleAuthAction = async (action: 'signIn' | 'signUp') => {
     setIsLoading(true);
     try {
-      const authFunction = action === 'signIn' ? signIn : signUp;
-      await authFunction(email, password);
+      const authFunction =
+        action === 'signIn'
+          ? signInWithEmailAndPassword
+          : createUserWithEmailAndPassword;
+      await authFunction(auth, email, password);
       toast({
         title: action === 'signIn' ? 'Signed In' : 'Account Created',
         description: "You're now logged in.",
@@ -58,11 +65,15 @@ export default function LoginPage() {
             errorMessage = 'An account with this email already exists.';
             break;
           case 'auth/weak-password':
-            errorMessage = 'Password is too weak. It should be at least 6 characters.';
+            errorMessage =
+              'Password is too weak. It should be at least 6 characters.';
             break;
           case 'auth/invalid-email':
             errorMessage = 'Please enter a valid email address.';
             break;
+          case 'auth/configuration-not-found':
+             errorMessage = 'Firebase configuration is incorrect. Please check your environment variables.';
+             break;
           default:
             errorMessage = 'An authentication error occurred. Please try again.';
         }
@@ -79,11 +90,11 @@ export default function LoginPage() {
 
   if (loading || user) {
     return (
-     <div className="flex h-screen w-full items-center justify-center bg-background">
-       <Loader2 className="h-8 w-8 animate-spin text-primary" />
-     </div>
-   );
- }
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <Tabs defaultValue="sign-in" className="w-full max-w-sm">

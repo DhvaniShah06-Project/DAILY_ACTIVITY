@@ -12,11 +12,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useAuth } from '@/contexts/auth-context';
+import { useUser } from '@/firebase';
 
 export function AppHeader() {
-  const { user, signOut } = useAuth();
-  
+  const { user, signOut } = useUser();
+
   const getInitials = (email?: string | null) => {
     if (!email) return 'U';
     return email.charAt(0).toUpperCase();

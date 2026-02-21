@@ -1,8 +1,23 @@
-export const firebaseConfig = {
-  "projectId": "studio-4239788751-c788a",
-  "appId": "1:548998258478:web:5e074a9d6c252f6d5b24bf",
-  "apiKey": "AIzaSyA239TqRhHJ5FZYebwK1_IVpoBhDK2aN8I",
-  "authDomain": "studio-4239788751-c788a.firebaseapp.com",
-  "measurementId": "",
-  "messagingSenderId": "548998258478"
-};
+import { FirebaseOptions } from 'firebase/app';
+
+export function getFirebaseConfig(): FirebaseOptions | null {
+    const firebaseConfig: FirebaseOptions = {
+        apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+        authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+        storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+        messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+        appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+    };
+
+    if (process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID) {
+        firebaseConfig.measurementId = process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID;
+    }
+
+    if (!firebaseConfig.apiKey || !firebaseConfig.projectId || !firebaseConfig.appId) {
+        console.error("Firebase config is missing or invalid. Please check your .env file.");
+        return null;
+    }
+
+    return firebaseConfig;
+}
