@@ -4,7 +4,7 @@ import { Task } from '@/lib/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { format } from 'date-fns';
+import { format, isPast, isToday } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 type TaskListProps = {
@@ -13,43 +13,22 @@ type TaskListProps = {
 };
 
 export function TaskList({ tasks, onToggleCompletion }: TaskListProps) {
-  const pendingTasks = tasks.filter((task) => !task.isCompleted);
-  const completedTasks = tasks.filter((task) => task.isCompleted);
+  const sortedTasks = [...tasks].sort((a, b) => {
+    if (a.isCompleted === b.isCompleted) {
+      return a.dueDate.getTime() - b.dueDate.getTime();
+    }
+    return a.isCompleted ? 1 : -1;
+  });
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-bold font-headline mb-4">Pending</h2>
-        <div className="space-y-3">
-          {pendingTasks.length > 0 ? (
-            pendingTasks.map((task) => (
-              <TaskItem
-                key={task.id}
-                task={task}
-                onToggleCompletion={onToggleCompletion}
-              />
-            ))
-          ) : (
-            <p className="text-muted-foreground">No pending tasks. Well done!</p>
-          )}
-        </div>
-      </div>
-      <div>
-        <h2 className="text-xl font-bold font-headline mb-4">Completed</h2>
-        <div className="space-y-3">
-          {completedTasks.length > 0 ? (
-            completedTasks.map((task) => (
-              <TaskItem
-                key={task.id}
-                task={task}
-                onToggleCompletion={onToggleCompletion}
-              />
-            ))
-          ) : (
-            <p className="text-muted-foreground">No tasks completed yet.</p>
-          )}
-        </div>
-      </div>
+    <div className="space-y-3">
+      {sortedTasks.map((task) => (
+        <TaskItem
+          key={task.id}
+          task={task}
+          onToggleCompletion={onToggleCompletion}
+        />
+      ))}
     </div>
   );
 }
@@ -61,6 +40,8 @@ function TaskItem({
   task: Task;
   onToggleCompletion: (taskId: string) => void;
 }) {
+  const isOverdue = !task.isCompleted && isPast(task.dueDate) && !isToday(task.dueDate);
+
   return (
     <Card
       className={cn(
@@ -87,11 +68,16 @@ function TaskItem({
           </label>
           <p
             className={cn(
-              'text-sm text-muted-foreground',
-              task.isCompleted && 'line-through'
+              'text-sm',
+              task.isCompleted
+                ? 'text-muted-foreground line-through'
+                : isOverdue
+                ? 'text-destructive'
+                : 'text-muted-foreground'
             )}
           >
-            Due: {format(task.dueDate, 'PPP')}
+            {isOverdue ? 'Overdue: ' : 'Due: '}
+            {format(task.dueDate, 'PPP')}
           </p>
         </div>
         <Badge variant={task.isCompleted ? 'outline' : 'secondary'}>

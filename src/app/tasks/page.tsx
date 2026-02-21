@@ -14,10 +14,13 @@ import {
 import { TaskList } from './components/task-list';
 import { TaskForm } from './components/task-form';
 import { EmptyState } from '@/components/empty-state';
+import { DateSelector } from './components/date-selector';
+import { isSameDay } from 'date-fns';
 
 export default function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date());
 
   const handleAddTask = (newTask: Omit<Task, 'id' | 'isCompleted'>) => {
     const taskToAdd: Task = {
@@ -25,7 +28,11 @@ export default function TasksPage() {
       id: Date.now().toString(),
       isCompleted: false,
     };
-    setTasks((prevTasks) => [...prevTasks, taskToAdd]);
+    setTasks((prevTasks) =>
+      [...prevTasks, taskToAdd].sort(
+        (a, b) => a.dueDate.getTime() - b.dueDate.getTime()
+      )
+    );
     setIsDialogOpen(false);
   };
 
@@ -37,20 +44,27 @@ export default function TasksPage() {
     );
   };
 
+  const tasksForSelectedDate = tasks.filter((task) =>
+    isSameDay(task.dueDate, selectedDate)
+  );
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold font-headline">Tasks</h1>
+          <h1 className="text-3xl font-bold font-headline">My Tasks</h1>
           <p className="text-muted-foreground">
             Manage your daily chores and to-do lists.
           </p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button size="lg">
-              <PlusCircle className="mr-2 h-5 w-5" />
-              Add Task
+            <Button
+              size="lg"
+              className="rounded-full w-12 h-12 p-0 aspect-square"
+            >
+              <PlusCircle className="h-6 w-6" />
+              <span className="sr-only">Add Task</span>
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[425px]">
@@ -62,21 +76,39 @@ export default function TasksPage() {
         </Dialog>
       </div>
 
-      {tasks.length > 0 ? (
-        <TaskList tasks={tasks} onToggleCompletion={toggleTaskCompletion} />
+      <DateSelector
+        selectedDate={selectedDate}
+        onDateChange={setSelectedDate}
+      />
+
+      {tasksForSelectedDate.length > 0 ? (
+        <TaskList
+          tasks={tasksForSelectedDate}
+          onToggleCompletion={toggleTaskCompletion}
+        />
       ) : (
         <EmptyState
-          title="No tasks yet!"
-          description="Get started by adding your first task."
-          imageSrc="https://picsum.photos/seed/empty-tasks/400/300"
-          imageAlt="Empty task list"
-          imageHint="empty list"
+          title="No tasks for this day!"
+          description="Enjoy your day or add a new task."
+          imageSrc="https://picsum.photos/seed/empty-tasks-day/400/300"
+          imageAlt="Empty task list for the day"
+          imageHint="relaxing beach"
         >
-          <DialogTrigger asChild>
-            <Button>
-              <PlusCircle className="mr-2 h-4 w-4" /> Add Task
-            </Button>
-          </DialogTrigger>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <PlusCircle className="mr-2 h-4 w-4" /> Add Task
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle className="font-headline">
+                  Add a new task
+                </DialogTitle>
+              </DialogHeader>
+              <TaskForm onSubmit={handleAddTask} />
+            </DialogContent>
+          </Dialog>
         </EmptyState>
       )}
     </div>
