@@ -1,3 +1,34 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "user-avatar",
+      "description": "Placeholder for user avatar",
+      "imageUrl": "https://images.unsplash.com/photo-1540569014015-19a7be504e3a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxwZXJzb24lMjBwb3J0cmFpdHxlbnwwfHx8fDE3NzE1OTUwNDd8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "person portrait"
+    },
+    {
+      "id": "empty-tasks",
+      "description": "Illustration for an empty task list",
+      "imageUrl": "https://images.unsplash.com/photo-1654931799020-ce7cf3f4a2c7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxlbXB0eSUyMGxpc3R8ZW58MHx8fHwxNzcxNjMzMTU1fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "empty list"
+    },
+    {
+      "id": "empty-bills",
+      "description": "Illustration for an empty bill list",
+      "imageUrl": "https://images.unsplash.com/photo-1760262362688-d539798b56f3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8ZW1wdHklMjB3YWxsZXR8ZW58MHx8fHwxNzcxNjU1NDIxfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "empty wallet"
+    },
+    {
+      "id": "empty-expenses",
+      "description": "Illustration for empty expense list",
+      "imageUrl": "https://images.unsplash.com/photo-1554672723-d42a16e533db?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxubyUyMG1vbmV5fGVufDB8fHx8MTc3MTY1NTQyMnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "no money"
+    },
+    {
+      "id": "reports-hero",
+      "description": "Hero image for the reports page",
+      "imageUrl": "https://images.unsplash.com/photo-1744473119469-905016183836?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxjaGFydHMlMjBhbmFseXRpY3N8ZW58MHx8fHwxNzcxNjU1NDIyfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "charts analytics"
+    }
+  ]
 }
