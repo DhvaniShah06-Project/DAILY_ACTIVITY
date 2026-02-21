@@ -9,6 +9,7 @@ import {
   Wallet,
   AreaChart,
   LocateFixed,
+  Settings,
 } from 'lucide-react';
 import {
   SidebarMenu,
@@ -24,6 +25,7 @@ const navItems = [
   { href: '/expenses', label: 'Expenses', icon: Wallet },
   { href: '/reports', label: 'Reports', icon: AreaChart },
   { href: '/reminders', label: 'Reminders', icon: LocateFixed },
+  { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
 export function SidebarNav() {
@@ -41,7 +43,7 @@ export function SidebarNav() {
                 isActive={isActive}
                 className={cn(
                   'font-headline',
-                  isActive && 'bg-primary/20 text-primary hover:bg-primary/30'
+                  isActive && 'bg-sidebar-accent text-sidebar-accent-foreground'
                 )}
                 tooltip={{ children: label }}
               >

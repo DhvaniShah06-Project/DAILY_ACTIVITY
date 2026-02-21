@@ -1,9 +1,10 @@
 'use client';
 
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Bell, Globe, LogOut } from 'lucide-react';
+import { Bell, Globe, LogOut, Settings } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -38,6 +39,8 @@ export function AppHeader() {
         return 'Reports';
       case 'reminders':
         return 'Smart Reminders';
+      case 'settings':
+        return 'Settings';
       default:
         return page.charAt(0).toUpperCase() + page.slice(1);
     }
@@ -53,7 +56,7 @@ export function AppHeader() {
           <h2 className="text-lg font-semibold font-headline">{pageTitle}</h2>
         </div>
       </div>
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2">
         <Button variant="ghost" size="icon">
           <Bell className="h-5 w-5" />
           <span className="sr-only">Notifications</span>
@@ -72,6 +75,13 @@ export function AppHeader() {
             <DropdownMenuItem disabled>ગુજરાતી (coming soon)</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+
+        <Button asChild variant="ghost" size="icon">
+          <Link href="/settings">
+            <Settings className="h-5 w-5" />
+            <span className="sr-only">Settings</span>
+          </Link>
+        </Button>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
