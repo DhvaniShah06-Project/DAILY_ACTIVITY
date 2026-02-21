@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 import {
   SidebarProvider,
   Sidebar,
@@ -18,6 +19,7 @@ import { OfflineIndicator } from '@/components/layout/offline-indicator';
 import { Button } from '@/components/ui/button';
 import { Bell, HelpCircle } from 'lucide-react';
 import { AuthGuard } from '../auth/auth-guard';
+import { Logo } from '../logo';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -35,9 +37,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       <SidebarProvider>
         <Sidebar>
           <SidebarHeader className="p-4">
-            <h1 className="font-headline text-2xl font-bold text-primary">
-              GharSathi
-            </h1>
+            <Link href="/" className="flex items-center gap-2">
+              <Logo className="text-primary" />
+              <h1 className="font-headline text-2xl font-bold text-primary group-data-[collapsible=icon]:hidden">
+                GharSathi
+              </h1>
+            </Link>
           </SidebarHeader>
           <SidebarContent>
             <SidebarNav />

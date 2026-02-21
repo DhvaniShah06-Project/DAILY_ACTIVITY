@@ -22,6 +22,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { FirebaseError } from 'firebase/app';
 import { Loader2 } from 'lucide-react';
+import { Logo } from '@/components/logo';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -98,9 +99,12 @@ export default function LoginPage() {
 
   return (
     <Tabs defaultValue="sign-in" className="w-full max-w-sm">
-      <h1 className="text-3xl font-bold font-headline text-center mb-6 text-primary">
-        GharSathi
-      </h1>
+      <div className="mb-6 flex items-center justify-center gap-2">
+        <Logo className="h-10 w-10 text-primary" />
+        <h1 className="text-3xl font-bold font-headline text-primary">
+          GharSathi
+        </h1>
+      </div>
       <TabsList className="grid w-full grid-cols-2">
         <TabsTrigger value="sign-in">Sign In</TabsTrigger>
         <TabsTrigger value="sign-up">Sign Up</TabsTrigger>
