@@ -69,7 +69,7 @@ function BillItem({
 }) {
   const isOverdue = bill.status === 'unpaid' && isPast(bill.dueDate) && !isToday(bill.dueDate);
   return (
-    <Card className={cn(isOverdue && 'border-destructive bg-destructive/10')}>
+    <Card className={cn('relative', isOverdue && 'border-destructive bg-destructive/10')}>
       <CardContent className="p-4 flex justify-between items-start">
         <div>
           <p className="font-semibold">{bill.name}</p>
@@ -93,7 +93,7 @@ function BillItem({
                 ? 'default'
                 : 'secondary'
             }
-            className={cn(bill.status === 'paid' && 'bg-green-600 text-white')}
+            className={cn(bill.status === 'paid' && 'bg-accent text-accent-foreground')}
           >
             {isOverdue ? 'Overdue' : bill.status}
           </Badge>
