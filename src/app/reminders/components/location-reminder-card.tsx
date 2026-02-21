@@ -65,7 +65,7 @@ export function LocationReminderCard() {
       <CardHeader>
         <CardTitle className="font-headline">Location-Based Reminder</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 pt-6">
         <div className="space-y-2">
             <label htmlFor="needs" className="text-sm font-medium">What do you need to do?</label>
             <Input
@@ -90,7 +90,7 @@ export function LocationReminderCard() {
           )}
         </Button>
         {reminder && (
-          <Alert variant={reminder.relevant ? 'default' : 'destructive'}>
+          <Alert variant={reminder.relevant ? 'success' : 'destructive'}>
             <BellRing className="h-4 w-4" />
             <AlertTitle>Smart Reminder</AlertTitle>
             <AlertDescription>{reminder.text}</AlertDescription>
