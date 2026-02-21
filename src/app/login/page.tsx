@@ -48,7 +48,24 @@ export default function LoginPage() {
       console.error(error);
       let errorMessage = 'An unexpected error occurred.';
       if (error instanceof FirebaseError) {
-        errorMessage = error.message.replace('Firebase: ', '').replace(`(${error.code})`, '');
+        switch (error.code) {
+          case 'auth/user-not-found':
+          case 'auth/wrong-password':
+          case 'auth/invalid-credential':
+            errorMessage = 'Invalid email or password. Please try again.';
+            break;
+          case 'auth/email-already-in-use':
+            errorMessage = 'An account with this email already exists.';
+            break;
+          case 'auth/weak-password':
+            errorMessage = 'Password is too weak. It should be at least 6 characters.';
+            break;
+          case 'auth/invalid-email':
+            errorMessage = 'Please enter a valid email address.';
+            break;
+          default:
+            errorMessage = 'An authentication error occurred. Please try again.';
+        }
       }
       toast({
         variant: 'destructive',
