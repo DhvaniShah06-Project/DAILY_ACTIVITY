@@ -28,7 +28,7 @@ export default function TasksPage() {
 
   const tasksRef = useMemo(
     () => (user ? collection(firestore, 'users', user.uid, 'tasks') : null),
-    [user, firestore]
+    [user?.uid, firestore]
   );
   
   const { data: rawTasks, isLoading: tasksLoading } = useCollection<Task>(tasksRef);

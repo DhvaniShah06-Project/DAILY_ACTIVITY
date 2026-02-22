@@ -35,15 +35,15 @@ export default function DashboardPage() {
 
   const tasksRef = useMemo(
     () => (user ? collection(firestore, 'users', user.uid, 'tasks') : null),
-    [user, firestore]
+    [user?.uid, firestore]
   );
   const billsRef = useMemo(
     () => (user ? collection(firestore, 'users', user.uid, 'bills') : null),
-    [user, firestore]
+    [user?.uid, firestore]
   );
   const expensesRef = useMemo(
     () => (user ? collection(firestore, 'users', user.uid, 'expenses') : null),
-    [user, firestore]
+    [user?.uid, firestore]
   );
 
   const { data: rawTasks, isLoading: loadingTasks } = useCollection<Task>(tasksRef);
