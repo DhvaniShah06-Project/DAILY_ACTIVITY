@@ -1,7 +1,6 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import type { Task } from '@/lib/types';
-import { tasks as initialTasks } from '@/lib/data';
 import { Loader2, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,14 +15,37 @@ import { TaskForm } from './components/task-form';
 import { EmptyState } from '@/components/empty-state';
 import { DateSelector } from './components/date-selector';
 import { isSameDay } from 'date-fns';
+import { useUser, useFirestore } from '@/firebase';
+import { useCollection, WithId } from '@/firebase/firestore/use-collection';
+import { collection, query, Timestamp } from 'firebase/firestore';
+import { addTask, updateTaskCompletion } from '@/lib/firebase/db';
+import { useToast } from '@/hooks/use-toast';
 
 export default function TasksPage() {
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const { user } = useUser();
+  const firestore = useFirestore();
+  const { toast } = useToast();
+
+  const tasksRef = useMemo(
+    () => (user ? collection(firestore, 'users', user.uid, 'tasks') : null),
+    [user, firestore]
+  );
+  
+  const { data: rawTasks, isLoading: tasksLoading } = useCollection<Task>(tasksRef);
+
+  const tasks = useMemo(() => {
+    if (!rawTasks) return [];
+    return rawTasks.map(task => ({
+        ...task,
+        dueDate: task.dueDate instanceof Timestamp ? task.dueDate.toDate() : task.dueDate,
+    }));
+  }, [rawTasks]);
+  
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   useEffect(() => {
-    // Set date on client-side to avoid hydration mismatch
     setSelectedDate(new Date());
   }, []);
 
@@ -33,29 +55,36 @@ export default function TasksPage() {
     }
   }, []);
 
-  const handleAddTask = (newTask: Omit<Task, 'id' | 'isCompleted'>) => {
-    const taskToAdd: Task = {
-      ...newTask,
-      id: Date.now().toString(),
-      isCompleted: false,
-    };
-    setTasks((prevTasks) =>
-      [...prevTasks, taskToAdd].sort(
-        (a, b) => a.dueDate.getTime() - b.dueDate.getTime()
-      )
-    );
-    setIsDialogOpen(false);
+  const handleAddTask = async (newTask: Omit<Task, 'id' | 'isCompleted'>) => {
+    if (!user) {
+      toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to add a task.' });
+      return;
+    }
+    try {
+      await addTask(firestore, user.uid, newTask);
+      toast({ title: 'Success', description: 'Task added successfully.' });
+      setIsDialogOpen(false);
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Failed to add task.' });
+      console.error(error);
+    }
   };
 
-  const toggleTaskCompletion = (taskId: string) => {
-    setTasks(
-      tasks.map((task) =>
-        task.id === taskId ? { ...task, isCompleted: !task.isCompleted } : task
-      )
-    );
+  const toggleTaskCompletion = async (taskId: string) => {
+    if (!user) return;
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+    try {
+      await updateTaskCompletion(firestore, user.uid, taskId, !task.isCompleted);
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Failed to update task.' });
+      console.error(error);
+    }
   };
+  
+  const pageIsLoading = !selectedDate || tasksLoading;
 
-  if (!selectedDate) {
+  if (pageIsLoading) {
     return (
       <div className="flex h-[60vh] w-full items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />

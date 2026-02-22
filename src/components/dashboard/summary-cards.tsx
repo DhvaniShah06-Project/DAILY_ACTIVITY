@@ -1,17 +1,36 @@
-import { tasks, bills, budget } from '@/lib/data';
+'use client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ListChecks, Receipt, Wallet } from 'lucide-react';
 import { isToday } from 'date-fns';
 import { Progress } from '@/components/ui/progress';
+import type { Task, Bill, Expense } from '@/lib/types';
+import { useMemo } from 'react';
 
-export function SummaryCards() {
-  const tasksToday = tasks.filter(
-    (task) => isToday(task.dueDate) && !task.isCompleted
-  ).length;
+type SummaryCardsProps = {
+  tasks: Task[];
+  bills: Bill[];
+  expenses: Expense[];
+  budget: {
+    total: number;
+  };
+};
 
-  const billsDue = bills.filter((bill) => bill.status === 'unpaid').length;
+export function SummaryCards({ tasks, bills, expenses, budget }: SummaryCardsProps) {
+  const tasksToday = useMemo(() => 
+    tasks.filter(task => isToday(task.dueDate) && !task.isCompleted).length,
+    [tasks]
+  );
+
+  const billsDue = useMemo(() =>
+    bills.filter(bill => bill.status === 'unpaid').length,
+    [bills]
+  );
   
-  const totalSpent = budget.categories.reduce((acc, cat) => acc + cat.spent, 0);
+  const totalSpent = useMemo(() => 
+    expenses.reduce((acc, expense) => acc + expense.amount, 0),
+    [expenses]
+  );
+  
   const budgetProgress = (totalSpent / budget.total) * 100;
 
   return (

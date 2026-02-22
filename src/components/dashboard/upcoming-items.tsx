@@ -1,4 +1,5 @@
-import { tasks } from '@/lib/data';
+'use client';
+import { useMemo } from 'react';
 import { isToday } from 'date-fns';
 import {
   Card,
@@ -10,11 +11,19 @@ import {
 import { Badge } from '../ui/badge';
 import Link from 'next/link';
 import { Button } from '../ui/button';
+import type { Task } from '@/lib/types';
 
-export function UpcomingItems() {
-  const todaysTasks = tasks
-    .filter((task) => isToday(task.dueDate) && !task.isCompleted)
-    .sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime());
+type UpcomingItemsProps = {
+  tasks: Task[];
+};
+
+export function UpcomingItems({ tasks }: UpcomingItemsProps) {
+  const todaysTasks = useMemo(() =>
+    tasks
+      .filter((task) => isToday(task.dueDate) && !task.isCompleted)
+      .sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime()),
+    [tasks]
+  );
 
   return (
     <Card>

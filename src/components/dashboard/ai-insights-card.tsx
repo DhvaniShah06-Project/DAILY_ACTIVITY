@@ -11,10 +11,23 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { providePersonalizedSavingSuggestions } from '@/ai/flows/provide-personalized-saving-suggestions';
-import { budget, expenses } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
+import type { Expense } from '@/lib/types';
 
-export function AiInsightsCard() {
+type BudgetData = {
+  total: number;
+  categories: {
+    name: string;
+    total: number;
+  }[];
+};
+
+type AiInsightsCardProps = {
+  expenses: Expense[];
+  budget: BudgetData;
+};
+
+export function AiInsightsCard({ expenses, budget }: AiInsightsCardProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [suggestion, setSuggestion] = useState<string | null>(null);
   const { toast } = useToast();
