@@ -19,10 +19,6 @@ export const initializeFirebase = (): FirebaseInstances => {
 
     const config = getFirebaseConfig();
 
-    if (!config) {
-        throw new Error('Firebase configuration is missing or invalid. Check your .env file and src/firebase/config.ts');
-    }
-
     const app = getApps().length ? getApp() : initializeApp(config);
     const auth = getAuth(app);
     const firestore = getFirestore(app);
