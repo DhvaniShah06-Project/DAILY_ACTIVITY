@@ -51,6 +51,7 @@ export function TaskForm({ onSubmit, selectedDate }: TaskFormProps) {
       title: '',
       category: 'Cooking',
       dueDate: selectedDate || new Date(),
+      ingredients: '',
     },
   });
   const { toast } = useToast();
@@ -101,14 +102,23 @@ export function TaskForm({ onSubmit, selectedDate }: TaskFormProps) {
   };
 
   const handleFormSubmit = (data: TaskFormValues) => {
-    const taskData: Omit<Task, 'id' | 'isCompleted'> = {
-      title: data.title,
-      category: data.category,
-      dueDate: data.dueDate,
-    };
+    const { title, category, dueDate, ingredients } = data;
 
-    if (data.ingredients) {
-      taskData.ingredients = data.ingredients.split(',').map((i) => i.trim());
+    let taskData: Omit<Task, 'id' | 'isCompleted'>;
+
+    if (ingredients && ingredients.trim()) {
+      taskData = {
+        title,
+        category,
+        dueDate,
+        ingredients: ingredients.split(',').map((i) => i.trim()),
+      };
+    } else {
+      taskData = {
+        title,
+        category,
+        dueDate,
+      };
     }
 
     onSubmit(taskData);
