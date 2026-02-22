@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -57,12 +57,6 @@ export function TaskForm({ onSubmit, selectedDate }: TaskFormProps) {
   const { toast } = useToast();
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
-
-  useEffect(() => {
-    if (selectedDate) {
-      form.setValue('dueDate', selectedDate);
-    }
-  }, [selectedDate, form]);
 
   const category = form.watch('category');
   const ingredients = form.watch('ingredients');

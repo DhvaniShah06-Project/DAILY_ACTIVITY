@@ -74,7 +74,11 @@ export default function TasksPage() {
             <DialogHeader>
               <DialogTitle className="font-headline">Add a new task</DialogTitle>
             </DialogHeader>
-            <TaskForm onSubmit={handleAddTask} selectedDate={selectedDate} />
+            <TaskForm
+              onSubmit={handleAddTask}
+              selectedDate={selectedDate}
+              key={selectedDate.toISOString()}
+            />
           </DialogContent>
         </Dialog>
       </div>
@@ -109,7 +113,11 @@ export default function TasksPage() {
                   Add a new task
                 </DialogTitle>
               </DialogHeader>
-              <TaskForm onSubmit={handleAddTask} selectedDate={selectedDate} />
+              <TaskForm
+                onSubmit={handleAddTask}
+                selectedDate={selectedDate}
+                key={selectedDate.toISOString()}
+              />
             </DialogContent>
           </Dialog>
         </EmptyState>

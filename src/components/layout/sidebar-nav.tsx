@@ -38,19 +38,20 @@ export function SidebarNav() {
           href === '/' ? pathname === href : pathname.startsWith(href);
         return (
           <SidebarMenuItem key={href}>
-            <Link href={href} passHref legacyBehavior>
-              <SidebarMenuButton
-                isActive={isActive}
-                className={cn(
-                  'font-headline',
-                  isActive && 'bg-sidebar-accent text-sidebar-accent-foreground'
-                )}
-                tooltip={{ children: label }}
-              >
+            <SidebarMenuButton
+              asChild
+              isActive={isActive}
+              className={cn(
+                'font-headline',
+                isActive && 'bg-sidebar-accent text-sidebar-accent-foreground'
+              )}
+              tooltip={{ children: label }}
+            >
+              <Link href={href}>
                 <Icon className="h-5 w-5" />
                 <span>{label}</span>
-              </SidebarMenuButton>
-            </Link>
+              </Link>
+            </SidebarMenuButton>
           </SidebarMenuItem>
         );
       })}
