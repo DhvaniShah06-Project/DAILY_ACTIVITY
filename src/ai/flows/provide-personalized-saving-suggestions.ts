@@ -1,4 +1,3 @@
-'use server';
 /**
  * @fileOverview This file implements a Genkit flow for providing personalized saving suggestions.
  *

@@ -1,4 +1,3 @@
-'use server';
 /**
  * @fileOverview A Genkit flow for generating a monthly spending summary.
  *

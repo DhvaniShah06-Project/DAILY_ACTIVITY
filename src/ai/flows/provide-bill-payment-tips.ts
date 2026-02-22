@@ -1,4 +1,3 @@
-'use server';
 /**
  * @fileOverview A Genkit flow for providing personalized bill payment tips based on payment history.
  *
