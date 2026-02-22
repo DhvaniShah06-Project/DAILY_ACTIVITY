@@ -1,5 +1,3 @@
-'use server';
-
 import {
   providePersonalizedSavingSuggestions,
   type ProvidePersonalizedSavingSuggestionsInput,

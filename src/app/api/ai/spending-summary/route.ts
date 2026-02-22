@@ -1,5 +1,3 @@
-'use server';
-
 import {
   generateMonthlySpendingSummary,
   type GenerateMonthlySpendingSummaryInput,

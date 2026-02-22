@@ -101,12 +101,17 @@ export function TaskForm({ onSubmit, selectedDate }: TaskFormProps) {
   };
 
   const handleFormSubmit = (data: TaskFormValues) => {
-    onSubmit({
+    const taskData: Omit<Task, 'id' | 'isCompleted'> = {
       title: data.title,
       category: data.category,
       dueDate: data.dueDate,
-      ingredients: data.ingredients?.split(',').map((i) => i.trim()),
-    });
+    };
+
+    if (data.ingredients) {
+      taskData.ingredients = data.ingredients.split(',').map((i) => i.trim());
+    }
+
+    onSubmit(taskData);
     form.reset();
   };
 

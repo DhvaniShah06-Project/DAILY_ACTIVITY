@@ -1,5 +1,3 @@
-'use server';
-
 import {
   generateLocationBasedReminders,
   type GenerateLocationBasedRemindersInput,
