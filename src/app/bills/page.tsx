@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { BillForm } from './components/bill-form';
 import { useUser, useFirestore } from '@/firebase';
@@ -98,7 +99,10 @@ export default function BillsPage() {
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                <DialogTitle className="font-headline">Add a new bill</DialogTitle>
+                    <DialogTitle className="font-headline">Add a new bill</DialogTitle>
+                    <DialogDescription>
+                        Enter the details for a new bill to track.
+                    </DialogDescription>
                 </DialogHeader>
                 <BillForm onSubmit={handleAddBill} />
             </DialogContent>
@@ -124,7 +128,10 @@ export default function BillsPage() {
             </DialogTrigger>
              <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                <DialogTitle className="font-headline">Add a new bill</DialogTitle>
+                    <DialogTitle className="font-headline">Add a new bill</DialogTitle>
+                     <DialogDescription>
+                        Enter the details for a new bill to track.
+                    </DialogDescription>
                 </DialogHeader>
                 <BillForm onSubmit={handleAddBill} />
             </DialogContent>

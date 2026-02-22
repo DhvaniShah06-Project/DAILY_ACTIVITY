@@ -102,23 +102,14 @@ export function TaskForm({ onSubmit, selectedDate }: TaskFormProps) {
   };
 
   const handleFormSubmit = (data: TaskFormValues) => {
-    const { title, category, dueDate, ingredients } = data;
+    const taskData: Omit<Task, 'id' | 'isCompleted'> = {
+      title: data.title,
+      category: data.category,
+      dueDate: data.dueDate,
+    };
 
-    let taskData: Omit<Task, 'id' | 'isCompleted'>;
-
-    if (ingredients && ingredients.trim()) {
-      taskData = {
-        title,
-        category,
-        dueDate,
-        ingredients: ingredients.split(',').map((i) => i.trim()),
-      };
-    } else {
-      taskData = {
-        title,
-        category,
-        dueDate,
-      };
+    if (data.ingredients && data.ingredients.trim()) {
+      taskData.ingredients = data.ingredients.split(',').map((i) => i.trim());
     }
 
     onSubmit(taskData);

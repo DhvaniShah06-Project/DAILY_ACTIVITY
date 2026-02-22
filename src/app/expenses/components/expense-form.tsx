@@ -48,23 +48,14 @@ export function ExpenseForm({ onSubmit }: ExpenseFormProps) {
   });
 
   const handleFormSubmit = (data: ExpenseFormValues) => {
-    const { amount, category, date, notes } = data;
+    const expenseData: Omit<Expense, 'id'> = {
+      amount: data.amount,
+      category: data.category,
+      date: data.date,
+    };
     
-    let expenseData: Omit<Expense, 'id'>;
-
-    if (notes && notes.trim()) {
-      expenseData = {
-        amount,
-        category,
-        date,
-        notes,
-      };
-    } else {
-      expenseData = {
-        amount,
-        category,
-        date,
-      };
+    if (data.notes && data.notes.trim()) {
+      expenseData.notes = data.notes;
     }
     
     onSubmit(expenseData);

@@ -13,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { ExpenseForm } from './components/expense-form';
 import { useUser, useFirestore } from '@/firebase';
@@ -88,6 +89,9 @@ export default function ExpensesPage() {
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
               <DialogTitle className="font-headline">Log a new expense</DialogTitle>
+               <DialogDescription>
+                Enter the amount, category, and notes for your expense.
+              </DialogDescription>
             </DialogHeader>
             <ExpenseForm onSubmit={handleLogExpense} />
           </DialogContent>
@@ -115,6 +119,9 @@ export default function ExpensesPage() {
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
                 <DialogTitle className="font-headline">Log a new expense</DialogTitle>
+                <DialogDescription>
+                    Enter the amount, category, and notes for your expense.
+                </DialogDescription>
                 </DialogHeader>
                 <ExpenseForm onSubmit={handleLogExpense} />
             </DialogContent>

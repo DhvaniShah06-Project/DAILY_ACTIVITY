@@ -9,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { TaskList } from './components/task-list';
 import { TaskForm } from './components/task-form';
@@ -115,6 +116,9 @@ export default function TasksPage() {
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
               <DialogTitle className="font-headline">Add a new task</DialogTitle>
+              <DialogDescription>
+                Fill in the details below to add a new task to your list.
+              </DialogDescription>
             </DialogHeader>
             <TaskForm
               onSubmit={handleAddTask}
@@ -154,6 +158,9 @@ export default function TasksPage() {
                 <DialogTitle className="font-headline">
                   Add a new task
                 </DialogTitle>
+                 <DialogDescription>
+                  Fill in the details below to add a new task to your list.
+                </DialogDescription>
               </DialogHeader>
               <TaskForm
                 onSubmit={handleAddTask}
