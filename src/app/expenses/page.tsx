@@ -27,7 +27,7 @@ export default function ExpensesPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
 
-  const expensesRef = useMemo(() => (user ? collection(firestore, 'users', user.uid, 'expenses') : null), [user?.uid, firestore]);
+  const expensesRef = useMemo(() => (user ? collection(firestore, 'users', user.uid, 'expenses') : null), [user, firestore]);
   const { data: rawExpenses, isLoading } = useCollection<Expense>(expensesRef);
 
   const expenses = useMemo(() => {

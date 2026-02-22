@@ -26,7 +26,7 @@ export default function BillsPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   
-  const billsRef = useMemo(() => (user ? collection(firestore, 'users', user.uid, 'bills') : null), [user?.uid, firestore]);
+  const billsRef = useMemo(() => (user ? collection(firestore, 'users', user.uid, 'bills') : null), [user, firestore]);
   const { data: rawBills, isLoading } = useCollection<Bill>(billsRef);
 
   const bills = useMemo(() => {
