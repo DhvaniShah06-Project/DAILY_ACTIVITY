@@ -11,7 +11,8 @@ export function getFirebaseConfig(): FirebaseOptions {
     };
 
     if (!firebaseConfig.apiKey || !firebaseConfig.projectId || !firebaseConfig.appId) {
-        throw new Error('Firebase config is missing or invalid. Make sure NEXT_PUBLIC_FIREBASE_* environment variables are set.');
+        // This error should not be thrown anymore as the config is hardcoded.
+        throw new Error('Firebase config is missing or invalid.');
     }
 
     return firebaseConfig;
