@@ -8,29 +8,25 @@ import {
 } from 'firebase/firestore';
 import type { Bill, Expense, Task } from '@/lib/types';
 
-// Helper function to remove undefined properties from an object before saving to Firestore.
-const cleanupObject = <T extends object>(obj: T): Partial<T> => {
-  const newObj: Partial<T> = {};
-  for (const key in obj) {
-    if (obj.hasOwnProperty(key) && obj[key] !== undefined) {
-      newObj[key] = obj[key];
-    }
-  }
-  return newObj;
-};
-
 // Tasks
 export const addTask = async (
   db: Firestore,
   userId: string,
   task: Omit<Task, 'id' | 'isCompleted'>
 ) => {
-  const cleanTask = cleanupObject(task);
-  await addDoc(collection(db, 'users', userId, 'tasks'), {
-    ...cleanTask,
+  const dataToAdd: any = {
+    title: task.title,
+    category: task.category,
+    dueDate: task.dueDate,
     isCompleted: false,
     createdAt: serverTimestamp(),
-  });
+  };
+
+  if (task.ingredients && task.ingredients.length > 0) {
+    dataToAdd.ingredients = task.ingredients;
+  }
+
+  await addDoc(collection(db, 'users', userId, 'tasks'), dataToAdd);
 };
 
 export const updateTaskCompletion = async (
@@ -49,12 +45,16 @@ export const addBill = async (
   userId: string,
   bill: Omit<Bill, 'id' | 'status'>
 ) => {
-  const cleanBill = cleanupObject(bill);
-  await addDoc(collection(db, 'users', userId, 'bills'), {
-    ...cleanBill,
+  const dataToAdd: any = {
+    name: bill.name,
+    amount: bill.amount,
+    category: bill.category,
+    dueDate: bill.dueDate,
     status: 'unpaid',
     createdAt: serverTimestamp(),
-  });
+  };
+
+  await addDoc(collection(db, 'users', userId, 'bills'), dataToAdd);
 };
 
 export const updateBillStatus = async (
@@ -81,9 +81,16 @@ export const addExpense = async (
   userId: string,
   expense: Omit<Expense, 'id'>
 ) => {
-  const cleanExpense = cleanupObject(expense);
-  await addDoc(collection(db, 'users', userId, 'expenses'), {
-    ...cleanExpense,
-    createdAt: serverTimestamp(),
-  });
+    const dataToAdd: any = {
+        amount: expense.amount,
+        category: expense.category,
+        date: expense.date,
+        createdAt: serverTimestamp(),
+    };
+
+    if (expense.notes) {
+        dataToAdd.notes = expense.notes;
+    }
+
+  await addDoc(collection(db, 'users', userId, 'expenses'), dataToAdd);
 };
