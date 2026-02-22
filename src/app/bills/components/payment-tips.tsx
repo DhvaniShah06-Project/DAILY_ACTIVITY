@@ -10,7 +10,6 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Sparkles, Loader2 } from 'lucide-react';
-import { provideBillPaymentTips } from '@/ai/flows/provide-bill-payment-tips';
 import type { Bill } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
@@ -27,14 +26,26 @@ export function PaymentTips({ bills }: PaymentTipsProps) {
     setIsLoading(true);
     setTips(null);
     try {
-      const result = await provideBillPaymentTips({
+      const payload = {
         billHistory: bills.map((b) => ({
           ...b,
           dueDate: b.dueDate.toISOString().split('T')[0],
           paymentDate: b.paymentDate?.toISOString().split('T')[0],
         })),
         userName: 'User',
+      };
+      
+      const response = await fetch('/api/ai/bill-tips', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch AI tips from API.');
+      }
+
+      const result = await response.json();
       setTips(result.tips);
     } catch (error) {
       console.error('Failed to get payment tips:', error);

@@ -10,7 +10,6 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { providePersonalizedSavingSuggestions } from '@/ai/flows/provide-personalized-saving-suggestions';
 import { useToast } from '@/hooks/use-toast';
 import type { Expense } from '@/lib/types';
 
@@ -46,7 +45,7 @@ export function AiInsightsCard({ expenses, budget }: AiInsightsCardProps) {
         return acc;
       }, [] as { category: string; amount: number }[]);
 
-      const result = await providePersonalizedSavingSuggestions({
+      const payload = {
         spendingCategories,
         budget: {
           totalBudget: budget.total,
@@ -56,7 +55,21 @@ export function AiInsightsCard({ expenses, budget }: AiInsightsCardProps) {
           })),
         },
         financialGoals: 'Save for a vacation and reduce unnecessary spending.',
+      };
+
+      const response = await fetch('/api/ai/suggestions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
       });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch suggestions from API');
+      }
+
+      const result = await response.json();
       setSuggestion(result.suggestions);
     } catch (error) {
       console.error('Failed to get saving suggestions:', error);

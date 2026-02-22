@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { BellRing, Loader2, MapPin } from 'lucide-react';
-import { generateLocationBasedReminders } from '@/ai/flows/generate-location-based-reminders';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
@@ -32,10 +31,22 @@ export function LocationReminderCard() {
       async (position) => {
         try {
           const { latitude, longitude } = position.coords;
-          const result = await generateLocationBasedReminders({
+          const payload = {
             userLocation: { latitude, longitude },
             userNeeds: needs,
+          };
+          
+          const response = await fetch('/api/ai/reminders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
           });
+
+          if (!response.ok) {
+            throw new Error('Failed to fetch reminder from API.');
+          }
+
+          const result = await response.json();
           setReminder({ text: result.reminder, relevant: result.isRelevant });
         } catch (error) {
           console.error('Failed to get reminder:', error);

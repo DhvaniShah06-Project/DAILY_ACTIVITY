@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -13,24 +13,60 @@ import { FileDown, Loader2 } from 'lucide-react';
 import { SpendingPieChart } from './components/spending-pie-chart';
 import { HistoricalBarChart } from './components/historical-bar-chart';
 import { TaskCompletionReport } from './components/task-completion-report';
-import { generateMonthlySpendingSummary } from '@/ai/flows/generate-monthly-spending-summary';
 import type { GenerateMonthlySpendingSummaryOutput } from '@/ai/flows/generate-monthly-spending-summary';
-import { expenses } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
+import { useUser, useFirestore } from '@/firebase';
+import { useCollection } from '@/firebase/firestore/use-collection';
+import { collection, Timestamp } from 'firebase/firestore';
+import type { Expense } from '@/lib/types';
+
 
 export default function ReportsPage() {
+    const { user } = useUser();
+    const firestore = useFirestore();
+    const { toast } = useToast();
     const [summary, setSummary] = useState<GenerateMonthlySpendingSummaryOutput | null>(null);
     const [isLoading, setIsLoading] = useState(false);
-    const { toast } = useToast();
+
+    const expensesRef = useMemo(() => (user ? collection(firestore, 'users', user.uid, 'expenses') : null), [user?.uid, firestore]);
+    const { data: rawExpenses, isLoading: expensesLoading } = useCollection<Expense>(expensesRef);
+
+    const expenses = useMemo(() => {
+        if (!rawExpenses) return [];
+        return rawExpenses.map(expense => ({
+            ...expense,
+            date: expense.date instanceof Timestamp ? expense.date.toDate() : expense.date,
+        }));
+    }, [rawExpenses]);
 
     const getSummary = async () => {
+        if (!expenses || expenses.length === 0) {
+            toast({
+                variant: 'destructive',
+                title: 'No Data',
+                description: 'There are no expenses to analyze.',
+            });
+            return;
+        }
         setIsLoading(true);
         setSummary(null);
         try {
-            const result = await generateMonthlySpendingSummary({
+            const payload = {
                 month: "Last 30 days",
                 expenses: expenses.map(e => ({ category: e.category, amount: e.amount, description: e.notes})),
+            };
+
+            const response = await fetch('/api/ai/spending-summary', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
             });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch AI summary from API.');
+            }
+
+            const result = await response.json();
             setSummary(result);
         } catch (error) {
             console.error('Failed to generate summary:', error);
@@ -44,6 +80,13 @@ export default function ReportsPage() {
         }
     };
 
+    if (expensesLoading) {
+      return (
+        <div className="flex h-[60vh] w-full items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      );
+    }
 
   return (
     <div className="space-y-8">
@@ -83,7 +126,7 @@ export default function ReportsPage() {
                 ) : (
                     <div className="text-center py-8">
                         <p className="text-muted-foreground mb-4">Generate an AI summary of your monthly finances.</p>
-                        <Button onClick={getSummary}>Generate Summary</Button>
+                        <Button onClick={getSummary} disabled={expenses.length === 0}>Generate Summary</Button>
                     </div>
                 )}
             </CardContent>

@@ -28,7 +28,6 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import type { Task } from '@/lib/types';
 import { Textarea } from '@/components/ui/textarea';
-import { suggestCookingTaskDish } from '@/ai/flows/suggest-cooking-task-dish';
 import { useToast } from '@/hooks/use-toast';
 
 const taskSchema = z.object({
@@ -73,10 +72,22 @@ export function TaskForm({ onSubmit, selectedDate }: TaskFormProps) {
     setIsSuggesting(true);
     setSuggestions([]);
     try {
-      const result = await suggestCookingTaskDish({
+      const payload = {
         ingredients: ingredients.split(',').map((i) => i.trim()),
         timeOfDay: 'Dinner',
+      };
+      
+      const response = await fetch('/api/ai/dishes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch AI suggestions from API.');
+      }
+
+      const result = await response.json();
       setSuggestions(result.dishNames);
     } catch (error) {
       toast({
