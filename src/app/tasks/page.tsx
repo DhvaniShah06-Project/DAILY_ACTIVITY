@@ -74,7 +74,7 @@ export default function TasksPage() {
             <DialogHeader>
               <DialogTitle className="font-headline">Add a new task</DialogTitle>
             </DialogHeader>
-            <TaskForm onSubmit={handleAddTask} />
+            <TaskForm onSubmit={handleAddTask} selectedDate={selectedDate} />
           </DialogContent>
         </Dialog>
       </div>
@@ -109,7 +109,7 @@ export default function TasksPage() {
                   Add a new task
                 </DialogTitle>
               </DialogHeader>
-              <TaskForm onSubmit={handleAddTask} />
+              <TaskForm onSubmit={handleAddTask} selectedDate={selectedDate} />
             </DialogContent>
           </Dialog>
         </EmptyState>
