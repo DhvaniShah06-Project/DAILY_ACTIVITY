@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import type { Task } from '@/lib/types';
 import { tasks as initialTasks } from '@/lib/data';
-import { PlusCircle } from 'lucide-react';
+import { Loader2, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -20,7 +20,12 @@ import { isSameDay } from 'date-fns';
 export default function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+
+  useEffect(() => {
+    // Set date on client-side to avoid hydration mismatch
+    setSelectedDate(new Date());
+  }, []);
 
   useEffect(() => {
     if (window.location.hash === '#add') {
@@ -49,6 +54,14 @@ export default function TasksPage() {
       )
     );
   };
+
+  if (!selectedDate) {
+    return (
+      <div className="flex h-[60vh] w-full items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   const tasksForSelectedDate = tasks.filter((task) =>
     isSameDay(task.dueDate, selectedDate)

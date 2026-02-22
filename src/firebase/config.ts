@@ -1,22 +1,21 @@
 import { FirebaseOptions } from 'firebase/app';
 
-export function getFirebaseConfig(): FirebaseOptions | null {
-    const firebaseConfig: FirebaseOptions = {
-        apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-        authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-        storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-        messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-        appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-    };
+// This configuration is automatically generated and public.
+// It's safe to commit this to your repository.
+const firebaseConfig: FirebaseOptions = {
+    apiKey: "AIzaSyAzP8x4KGsgx_j342_LTWad324D-Ac",
+    authDomain: "ghar-sathi-3a795.firebaseapp.com",
+    projectId: "ghar-sathi-3a795",
+    storageBucket: "ghar-sathi-3a795.appspot.com",
+    messagingSenderId: "263884351273",
+    appId: "1:263884351273:web:0267c7e0c4a45a698a9643"
+};
 
-    if (process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID) {
-        firebaseConfig.measurementId = process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID;
-    }
-
+export function getFirebaseConfig(): FirebaseOptions {
+    // Basic validation to ensure the config object isn't empty.
     if (!firebaseConfig.apiKey || !firebaseConfig.projectId || !firebaseConfig.appId) {
-        console.error("Firebase config is missing or invalid. Please check your .env file.");
-        return null;
+        // This error should not be thrown in practice if the config is filled out.
+        throw new Error('Firebase config is missing or invalid. Please check src/firebase/config.ts');
     }
 
     return firebaseConfig;
