@@ -1,9 +1,25 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Users can only read and write their own data.
-    // This rule applies to the user's document and all subcollections.
-    match /users/{userId}/{document=**} {
+
+    // Allow user to manage their own user document
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Allow user to manage their own tasks
+    match /users/{userId}/tasks/{taskId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Allow user to manage their own bills
+    match /users/{userId}/bills/{billId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Allow user to manage their own expenses
+    match /users/{userId}/expenses/{expenseId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
   }
