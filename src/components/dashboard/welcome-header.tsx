@@ -1,21 +1,19 @@
 'use client';
 
-import { useUser } from "@/firebase";
 import { useState, useEffect } from 'react';
 
 export function WelcomeHeader() {
-  const { user } = useUser();
   const [greeting, setGreeting] = useState('');
   // A real app would get the name from the user's profile.
-  const name = user?.displayName || 'Dhvani';
+  const name = 'Dhvani';
 
   useEffect(() => {
     const getGreeting = () => {
       const hours = new Date().getHours();
-      if (hours < 12) return "Good Morning";
-      if (hours < 18) return "Good Afternoon";
-      return "Good Evening";
-    }
+      if (hours < 12) return 'Good Morning';
+      if (hours < 18) return 'Good Afternoon';
+      return 'Good Evening';
+    };
     setGreeting(getGreeting());
   }, []);
 
