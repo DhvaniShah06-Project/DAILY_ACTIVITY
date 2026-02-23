@@ -14,17 +14,14 @@ export const addTask = async (
   userId: string,
   task: Omit<Task, 'id' | 'isCompleted'>
 ) => {
-  const dataToAdd: any = {
+  const dataToAdd = {
     title: task.title,
     category: task.category,
     dueDate: task.dueDate,
     isCompleted: false,
     createdAt: serverTimestamp(),
+    ...(task.ingredients && task.ingredients.length > 0 && { ingredients: task.ingredients }),
   };
-
-  if (task.ingredients && task.ingredients.length > 0) {
-    dataToAdd.ingredients = task.ingredients;
-  }
 
   await addDoc(collection(db, 'users', userId, 'tasks'), dataToAdd);
 };
@@ -45,7 +42,7 @@ export const addBill = async (
   userId: string,
   bill: Omit<Bill, 'id' | 'status'>
 ) => {
-  const dataToAdd: any = {
+  const dataToAdd = {
     name: bill.name,
     amount: bill.amount,
     category: bill.category,
@@ -81,16 +78,13 @@ export const addExpense = async (
   userId: string,
   expense: Omit<Expense, 'id'>
 ) => {
-    const dataToAdd: any = {
+    const dataToAdd = {
         amount: expense.amount,
         category: expense.category,
         date: expense.date,
         createdAt: serverTimestamp(),
+        ...(expense.notes && { notes: expense.notes }),
     };
-
-    if (expense.notes) {
-        dataToAdd.notes = expense.notes;
-    }
 
   await addDoc(collection(db, 'users', userId, 'expenses'), dataToAdd);
 };
