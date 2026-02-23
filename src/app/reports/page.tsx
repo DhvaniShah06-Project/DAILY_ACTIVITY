@@ -15,8 +15,8 @@ import { HistoricalBarChart } from './components/historical-bar-chart';
 import { TaskCompletionReport } from './components/task-completion-report';
 import { useToast } from '@/hooks/use-toast';
 import type { Expense } from '@/lib/types';
-import { useUser, useFirestore } from '@/firebase';
-import { collection, onSnapshot, query } from 'firebase/firestore';
+import { useUser } from '@/firebase';
+import { expenses as dummyExpenses } from '@/lib/data';
 
 type SummaryOutput = {
     totalSpending: number;
@@ -28,32 +28,10 @@ type SummaryOutput = {
 export default function ReportsPage() {
     const { toast } = useToast();
     const { user } = useUser();
-    const db = useFirestore();
     const [summary, setSummary] = useState<SummaryOutput | null>(null);
     const [isLoading, setIsLoading] = useState(false);
-    const [expenses, setExpenses] = useState<Expense[]>([]);
-    const [isLoadingExpenses, setIsLoadingExpenses] = useState(true);
-
-    useEffect(() => {
-        if (!user) {
-            setIsLoadingExpenses(false);
-            return;
-        }
-        const expensesQuery = query(collection(db, 'users', user.uid, 'expenses'));
-        const unsubscribe = onSnapshot(expensesQuery, (snapshot) => {
-            const fetchedExpenses = snapshot.docs.map(doc => {
-                const data = doc.data();
-                return {
-                    id: doc.id,
-                    ...data,
-                    date: data.date?.toDate ? data.date.toDate() : new Date(),
-                } as Expense;
-            });
-            setExpenses(fetchedExpenses);
-            setIsLoadingExpenses(false);
-        });
-        return () => unsubscribe();
-    }, [user, db]);
+    const [expenses, setExpenses] = useState<Expense[]>(dummyExpenses);
+    const [isLoadingExpenses, setIsLoadingExpenses] = useState(false);
 
     const getSummary = async () => {
         if (!expenses || expenses.length === 0) {
@@ -67,35 +45,16 @@ export default function ReportsPage() {
         setIsLoading(true);
         setSummary(null);
         
-        const apiExpenses = expenses.map(e => ({
-            category: e.category,
-            amount: e.amount,
-            description: e.notes,
-        }));
-
-        try {
-            const response = await fetch('/api/ai/spending-summary', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    month: new Date().toLocaleString('default', { month: 'long', year: 'numeric' }),
-                    expenses: apiExpenses,
-                }),
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to fetch summary from API');
-            }
-            
-            const result = await response.json();
-            setSummary(result);
-
-        } catch (error) {
-             console.error('Error fetching summary:', error);
-             toast({ variant: 'destructive', title: 'AI Error', description: 'Could not fetch summary.' });
-        } finally {
-            setIsLoading(false);
-        }
+        // Simulate AI response with a delay
+        setTimeout(() => {
+          setSummary({
+            totalSpending: expenses.reduce((acc, e) => acc + e.amount, 0),
+            categoryBreakdown: [], // Not used in UI
+            summaryText: "Based on your spending, you're doing a great job managing your budget. Your largest expense category is 'Grocery'.",
+            tips: ["Consider looking for sales on groceries.", "Review your entertainment spending for potential savings."]
+          });
+          setIsLoading(false);
+        }, 1500);
     };
 
   return (

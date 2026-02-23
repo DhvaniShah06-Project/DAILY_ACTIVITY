@@ -17,66 +17,15 @@ import {
 } from '@/components/ui/dialog';
 import { BillForm } from './components/bill-form';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore } from '@/firebase';
-import { collection, addDoc, doc, updateDoc, serverTimestamp, onSnapshot, query, writeBatch } from 'firebase/firestore';
+import { useUser } from '@/firebase';
 
 
 export default function BillsPage() {
   const { toast } = useToast();
   const { user } = useUser();
-  const db = useFirestore();
-  const [bills, setBills] = useState<Bill[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [bills, setBills] = useState<Bill[]>(dummyBills);
+  const [isLoading, setIsLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-
-  useEffect(() => {
-    if (!user) {
-      setBills([]);
-      setIsLoading(false);
-      return;
-    }
-    setIsLoading(true);
-    const billsQuery = query(collection(db, 'users', user.uid, 'bills'));
-    const unsubscribe = onSnapshot(billsQuery, async (snapshot) => {
-      if (snapshot.empty && user) {
-        // One-time seed
-        try {
-          const batch = writeBatch(db);
-          const billsCol = collection(db, 'users', user.uid, 'bills');
-          dummyBills.forEach((bill) => {
-            const docRef = doc(billsCol);
-            const { id, ...billData } = bill;
-            batch.set(docRef, { ...billData, createdAt: serverTimestamp() });
-          });
-          await batch.commit();
-        } catch (e) {
-          console.error("Error seeding bills: ", e);
-          if (e instanceof Error) {
-            toast({ variant: 'destructive', title: 'Seeding Error', description: `Could not pre-populate bills: ${e.message}` });
-          }
-        }
-      } else {
-        const fetchedBills = snapshot.docs.map(doc => {
-          const data = doc.data();
-          return {
-            id: doc.id,
-            ...data,
-            dueDate: data.dueDate?.toDate ? data.dueDate.toDate() : new Date(),
-            paymentDate: data.paymentDate?.toDate ? data.paymentDate.toDate() : undefined,
-          } as Bill;
-        });
-        setBills(fetchedBills);
-      }
-      setIsLoading(false);
-    }, (error) => {
-      console.error("Error fetching bills: ", error);
-      toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch bills.' });
-      setIsLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [user, db, toast]);
-
 
   useEffect(() => {
     if (window.location.hash === '#add') {
@@ -89,56 +38,29 @@ export default function BillsPage() {
       toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in.' });
       return;
     }
-
-    const dataToSave: { [key: string]: any } = {
-      name: billData.name,
-      amount: billData.amount,
-      category: billData.category,
-      dueDate: billData.dueDate,
+    
+    const newBill: Bill = {
+      ...billData,
+      id: Date.now().toString(),
       status: 'unpaid',
-      createdAt: serverTimestamp(),
     };
 
-    if (billData.paymentMethod) {
-        dataToSave.paymentMethod = billData.paymentMethod;
-    }
-
-    const collectionRef = collection(db, 'users', user.uid, 'bills');
-    addDoc(collectionRef, dataToSave)
-      .then(() => {
-        toast({ title: 'Success', description: 'Bill added successfully.' });
-        setIsDialogOpen(false);
-      })
-      .catch((error) => {
-        console.error("Error adding bill: ", error);
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: `Could not add bill. ${error instanceof Error ? error.message : ''}`,
-        });
-      });
+    setBills(prevBills => [...prevBills, newBill]);
+    toast({ title: 'Success', description: 'Bill added successfully.' });
+    setIsDialogOpen(false);
   };
 
   const handleUpdateBillStatus = (billId: string, status: Bill['status']) => {
-    if (!user) return;
-    const billRef = doc(db, 'users', user.uid, 'bills', billId);
-    
-    const dataToUpdate: { [key: string]: any } = { status };
-    if (status === 'paid') {
-      dataToUpdate.paymentDate = serverTimestamp();
-    } else {
-      dataToUpdate.paymentDate = null;
-    }
-
-    updateDoc(billRef, dataToUpdate)
-      .catch((error) => {
-        console.error("Error updating bill: ", error);
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: `Could not update bill. ${error instanceof Error ? error.message : ''}`,
-        });
-      });
+    setBills(prevBills => prevBills.map(bill => {
+      if (bill.id === billId) {
+        return {
+          ...bill,
+          status,
+          paymentDate: status === 'paid' ? new Date() : undefined,
+        };
+      }
+      return bill;
+    }));
   };
 
   return (

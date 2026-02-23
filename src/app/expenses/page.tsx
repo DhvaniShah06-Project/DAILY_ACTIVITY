@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useMemo } from 'react';
 import type { Expense } from '@/lib/types';
-import { expenses as dummyExpenses } from '@/lib/data';
+import { expenses as dummyExpenses, budget as dummyBudget } from '@/lib/data';
 import { PlusCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/empty-state';
@@ -17,75 +17,30 @@ import {
 } from '@/components/ui/dialog';
 import { ExpenseForm } from './components/expense-form';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore } from '@/firebase';
-import { collection, addDoc, serverTimestamp, onSnapshot, query, writeBatch, doc } from 'firebase/firestore';
+import { useUser } from '@/firebase';
 
 export default function ExpensesPage() {
   const { toast } = useToast();
   const { user } = useUser();
-  const db = useFirestore();
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [expenses, setExpenses] = useState<Expense[]>(dummyExpenses);
+  const [isLoading, setIsLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  // Dummy budget data as it's not in Firestore yet
-  const budget = useMemo(() => ({
-    total: 1000,
-    categories: [
-      { name: 'Grocery', total: 400, spent: expenses.filter(e=>e.category === 'Grocery').reduce((a,b)=>a+b.amount,0) },
-      { name: 'Transport', total: 150, spent: expenses.filter(e=>e.category === 'Transport').reduce((a,b)=>a+b.amount,0) },
-      { name: 'Entertainment', total: 100, spent: expenses.filter(e=>e.category === 'Entertainment').reduce((a,b)=>a+b.amount,0) },
-      { name: 'Bills', total: 250, spent: expenses.filter(e=>e.category === 'Bills').reduce((a,b)=>a+b.amount,0) },
-      { name: 'Other', total: 100, spent: expenses.filter(e=>e.category === 'Other').reduce((a,b)=>a+b.amount,0) },
-    ],
-  }), [expenses]);
+  // Use dummy budget data and recalculate spent amounts based on local state
+  const budget = useMemo(() => {
+    const categorySpending = expenses.reduce((acc, expense) => {
+      acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
+      return acc;
+    }, {} as Record<string, number>);
 
-  useEffect(() => {
-    if (!user) {
-      setExpenses([]);
-      setIsLoading(false);
-      return;
-    }
-    setIsLoading(true);
-    const expensesQuery = query(collection(db, 'users', user.uid, 'expenses'));
-    const unsubscribe = onSnapshot(expensesQuery, async (snapshot) => {
-      if (snapshot.empty && user) {
-        // One-time seed
-        try {
-          const batch = writeBatch(db);
-          const expensesCol = collection(db, 'users', user.uid, 'expenses');
-          dummyExpenses.forEach((expense) => {
-            const docRef = doc(expensesCol);
-            const { id, ...expenseData } = expense;
-            batch.set(docRef, { ...expenseData, createdAt: serverTimestamp() });
-          });
-          await batch.commit();
-        } catch (e) {
-          console.error("Error seeding expenses: ", e);
-           if (e instanceof Error) {
-            toast({ variant: 'destructive', title: 'Seeding Error', description: `Could not pre-populate expenses: ${e.message}` });
-          }
-        }
-      } else {
-        const fetchedExpenses = snapshot.docs.map(doc => {
-          const data = doc.data();
-          return {
-            id: doc.id,
-            ...data,
-            date: data.date?.toDate ? data.date.toDate() : new Date(),
-          } as Expense;
-        });
-        setExpenses(fetchedExpenses.sort((a, b) => b.date.getTime() - a.date.getTime()));
-      }
-      setIsLoading(false);
-    }, (error) => {
-      console.error("Error fetching expenses: ", error);
-      toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch expenses.' });
-      setIsLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [user, db, toast]);
+    return {
+      total: dummyBudget.total,
+      categories: dummyBudget.categories.map(cat => ({
+        ...cat,
+        spent: categorySpending[cat.name] || 0
+      })),
+    };
+  }, [expenses]);
 
 
   useEffect(() => {
@@ -100,31 +55,14 @@ export default function ExpensesPage() {
       return;
     }
     
-    const dataToSave: { [key: string]: any } = {
-      amount: expenseData.amount,
-      category: expenseData.category,
-      date: expenseData.date,
-      createdAt: serverTimestamp(),
+    const newExpense: Expense = {
+      ...expenseData,
+      id: Date.now().toString(),
     };
 
-    if (expenseData.notes) {
-      dataToSave.notes = expenseData.notes;
-    }
-
-    const collectionRef = collection(db, 'users', user.uid, 'expenses');
-    addDoc(collectionRef, dataToSave)
-      .then(() => {
-        toast({ title: 'Success', description: 'Expense logged.' });
-        setIsDialogOpen(false);
-      })
-      .catch((error) => {
-        console.error("Error logging expense: ", error);
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: `Could not log expense. ${error instanceof Error ? error.message : ''}`,
-        });
-      });
+    setExpenses(prevExpenses => [newExpense, ...prevExpenses].sort((a, b) => b.date.getTime() - a.date.getTime()));
+    toast({ title: 'Success', description: 'Expense logged.' });
+    setIsDialogOpen(false);
   };
 
   return (

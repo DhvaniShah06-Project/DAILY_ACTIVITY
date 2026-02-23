@@ -1,65 +1,34 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { WelcomeHeader } from '@/components/dashboard/welcome-header';
 import { QuickActions } from '@/components/dashboard/quick-actions';
 import { UpcomingItems } from '@/components/dashboard/upcoming-items';
 import { AiInsightsCard } from '@/components/dashboard/ai-insights-card';
 import { SummaryCards } from '@/components/dashboard/summary-cards';
-import { useUser, useFirestore } from '@/firebase';
-import { collection, onSnapshot, query } from 'firebase/firestore';
-import { useState, useEffect } from 'react';
+import { useUser } from '@/firebase';
 import type { Task, Bill, Expense } from '@/lib/types';
+import { tasks as dummyTasks, bills as dummyBills, expenses as dummyExpenses, budget as dummyBudget } from '@/lib/data';
 import { Loader2 } from 'lucide-react';
 
 export default function DashboardPage() {
-  const { user } = useUser();
-  const db = useFirestore();
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [bills, setBills] = useState<Bill[]>([]);
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    if (!user) {
-      setIsLoading(false);
-      return;
-    }
-
-    const collections = {
-      tasks: collection(db, 'users', user.uid, 'tasks'),
-      bills: collection(db, 'users', user.uid, 'bills'),
-      expenses: collection(db, 'users', user.uid, 'expenses'),
-    };
-
-    const unsubscribes = [
-      onSnapshot(query(collections.tasks), (snapshot) => {
-        setTasks(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), dueDate: doc.data().dueDate.toDate() })) as Task[]);
-        setIsLoading(false);
-      }),
-      onSnapshot(query(collections.bills), (snapshot) => {
-        setBills(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), dueDate: doc.data().dueDate.toDate() })) as Bill[]);
-      }),
-      onSnapshot(query(collections.expenses), (snapshot) => {
-        setExpenses(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), date: doc.data().date.toDate() })) as Expense[]);
-      }),
-    ];
-
-    return () => unsubscribes.forEach(unsub => unsub());
-
-  }, [user, db]);
+  const { user } = useUser(); // Keep for welcome message etc.
+  const [tasks, setTasks] = useState<Task[]>(dummyTasks);
+  const [bills, setBills] = useState<Bill[]>(dummyBills);
+  const [expenses, setExpenses] = useState<Expense[]>(dummyExpenses);
+  const [isLoading, setIsLoading] = useState(false); // We don't have real loading, so set to false
 
   // Dummy budget data as it's not in Firestore yet
-  const budget = useMemo(() => ({
-    total: 1000,
-    categories: [
-      { name: 'Grocery', total: 400, spent: expenses.filter(e=>e.category === 'Grocery').reduce((a,b)=>a+b.amount,0) },
-      { name: 'Transport', total: 150, spent: expenses.filter(e=>e.category === 'Transport').reduce((a,b)=>a+b.amount,0) },
-      { name: 'Entertainment', total: 100, spent: expenses.filter(e=>e.category === 'Entertainment').reduce((a,b)=>a+b.amount,0) },
-      { name: 'Bills', total: 250, spent: expenses.filter(e=>e.category === 'Bills').reduce((a,b)=>a+b.amount,0) },
-      { name: 'Other', total: 100, spent: expenses.filter(e=>e.category === 'Other').reduce((a,b)=>a+b.amount,0) },
-    ],
-  }), [expenses]);
+  const budget = useMemo(() => {
+    const totalSpent = expenses.reduce((acc, expense) => acc + expense.amount, 0);
+    return {
+      total: dummyBudget.total,
+      categories: dummyBudget.categories.map(cat => ({
+          ...cat,
+          spent: expenses.filter(e => e.category === cat.name).reduce((a,b)=>a+b.amount,0)
+      })),
+    };
+  }, [expenses]);
   
   if (isLoading) {
     return (
