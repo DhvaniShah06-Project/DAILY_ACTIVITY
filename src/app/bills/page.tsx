@@ -1,7 +1,8 @@
 'use client';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import type { Bill } from '@/lib/types';
-import { Loader2, PlusCircle } from 'lucide-react';
+import { bills as mockBills } from '@/lib/data';
+import { PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/empty-state';
 import { BillList } from './components/bill-list';
@@ -15,29 +16,11 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { BillForm } from './components/bill-form';
-import { useUser, useFirestore } from '@/firebase';
-import { useCollection } from '@/firebase/firestore/use-collection';
-import { collection, Timestamp, addDoc, serverTimestamp } from 'firebase/firestore';
-import { updateBillStatus } from '@/lib/firebase/db';
 import { useToast } from '@/hooks/use-toast';
 
 export default function BillsPage() {
-  const { user } = useUser();
-  const firestore = useFirestore();
   const { toast } = useToast();
-  
-  const billsRef = useMemo(() => (user ? collection(firestore, 'users', user.uid, 'bills') : null), [user, firestore]);
-  const { data: rawBills, isLoading } = useCollection<Bill>(billsRef);
-
-  const bills = useMemo(() => {
-    if (!rawBills) return [];
-    return rawBills.map(bill => ({
-      ...bill,
-      dueDate: bill.dueDate instanceof Timestamp ? bill.dueDate.toDate() : bill.dueDate,
-      paymentDate: bill.paymentDate instanceof Timestamp ? bill.paymentDate.toDate() : bill.paymentDate,
-    }));
-  }, [rawBills]);
-
+  const [bills, setBills] = useState<Bill[]>(mockBills);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   useEffect(() => {
@@ -46,54 +29,34 @@ export default function BillsPage() {
     }
   }, []);
 
-  const handleAddBill = async (billData: Omit<Bill, 'id' | 'status'>) => {
-    if (!user) {
-      toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to add a bill.' });
-      return;
+  const handleAddBill = (billData: Omit<Bill, 'id' | 'status'>) => {
+    const newBill: Bill = {
+      ...billData,
+      id: Date.now().toString(),
+      status: 'unpaid',
+    };
+    if (billData.paymentMethod) {
+      newBill.paymentMethod = billData.paymentMethod;
     }
-    try {
-      // Explicitly build the data object to ensure no `undefined` fields are sent.
-      const dataToAdd: { [key: string]: any } = {
-        name: billData.name,
-        amount: billData.amount,
-        category: billData.category,
-        dueDate: billData.dueDate,
-        status: 'unpaid',
-        createdAt: serverTimestamp(),
-      };
-
-      if (billData.paymentMethod) {
-        dataToAdd.paymentMethod = billData.paymentMethod;
-      }
-      
-      await addDoc(collection(firestore, 'users', user.uid, 'bills'), dataToAdd);
-
-      toast({ title: 'Success', description: 'Bill added successfully.' });
-      (document.activeElement as HTMLElement)?.blur();
-      setIsDialogOpen(false);
-    } catch (error) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Failed to add bill.' });
-      console.error(error);
-    }
+    setBills((prevBills) => [...prevBills, newBill]);
+    toast({ title: 'Success', description: 'Bill added successfully.' });
+    (document.activeElement as HTMLElement)?.blur();
+    setIsDialogOpen(false);
   };
   
-  const handleUpdateBillStatus = async (billId: string, status: Bill['status']) => {
-    if (!user) return;
-    try {
-      await updateBillStatus(firestore, user.uid, billId, status);
-    } catch (error) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Failed to update bill status.' });
-      console.error(error);
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex h-[60vh] w-full items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
+  const handleUpdateBillStatus = (billId: string, status: Bill['status']) => {
+    setBills((prevBills) =>
+      prevBills.map((bill) =>
+        bill.id === billId
+          ? {
+              ...bill,
+              status,
+              paymentDate: status === 'paid' ? new Date() : undefined,
+            }
+          : bill
+      )
     );
-  }
+  };
 
   return (
     <div className="space-y-8">

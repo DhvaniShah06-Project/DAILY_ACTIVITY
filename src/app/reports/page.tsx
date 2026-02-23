@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import {
   Card,
   CardContent,
@@ -15,29 +15,14 @@ import { HistoricalBarChart } from './components/historical-bar-chart';
 import { TaskCompletionReport } from './components/task-completion-report';
 import type { GenerateMonthlySpendingSummaryOutput } from '@/ai/flows/generate-monthly-spending-summary';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore } from '@/firebase';
-import { useCollection } from '@/firebase/firestore/use-collection';
-import { collection, Timestamp } from 'firebase/firestore';
 import type { Expense } from '@/lib/types';
-
+import { expenses as mockExpenses } from '@/lib/data';
 
 export default function ReportsPage() {
-    const { user } = useUser();
-    const firestore = useFirestore();
     const { toast } = useToast();
     const [summary, setSummary] = useState<GenerateMonthlySpendingSummaryOutput | null>(null);
     const [isLoading, setIsLoading] = useState(false);
-
-    const expensesRef = useMemo(() => (user ? collection(firestore, 'users', user.uid, 'expenses') : null), [user?.uid, firestore]);
-    const { data: rawExpenses, isLoading: expensesLoading } = useCollection<Expense>(expensesRef);
-
-    const expenses = useMemo(() => {
-        if (!rawExpenses) return [];
-        return rawExpenses.map(expense => ({
-            ...expense,
-            date: expense.date instanceof Timestamp ? expense.date.toDate() : expense.date,
-        }));
-    }, [rawExpenses]);
+    const [expenses] = useState<Expense[]>(mockExpenses);
 
     const getSummary = async () => {
         if (!expenses || expenses.length === 0) {
@@ -79,14 +64,6 @@ export default function ReportsPage() {
             setIsLoading(false);
         }
     };
-
-    if (expensesLoading) {
-      return (
-        <div className="flex h-[60vh] w-full items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      );
-    }
 
   return (
     <div className="space-y-8">

@@ -1,8 +1,8 @@
 'use client';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import type { Expense } from '@/lib/types';
-import { budget as initialBudget } from '@/lib/data';
-import { Loader2, PlusCircle } from 'lucide-react';
+import { budget as initialBudget, expenses as mockExpenses } from '@/lib/data';
+import { PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/empty-state';
 import { ExpenseList } from './components/expense-list';
@@ -16,27 +16,11 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { ExpenseForm } from './components/expense-form';
-import { useUser, useFirestore } from '@/firebase';
-import { useCollection } from '@/firebase/firestore/use-collection';
-import { collection, Timestamp, addDoc, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
 export default function ExpensesPage() {
-  const { user } = useUser();
-  const firestore = useFirestore();
   const { toast } = useToast();
-
-  const expensesRef = useMemo(() => (user ? collection(firestore, 'users', user.uid, 'expenses') : null), [user, firestore]);
-  const { data: rawExpenses, isLoading } = useCollection<Expense>(expensesRef);
-
-  const expenses = useMemo(() => {
-    if (!rawExpenses) return [];
-    return rawExpenses.map(expense => ({
-        ...expense,
-        date: expense.date instanceof Timestamp ? expense.date.toDate() : expense.date,
-    }));
-  }, [rawExpenses]);
-
+  const [expenses, setExpenses] = useState<Expense[]>(mockExpenses);
   const [budget] = useState(initialBudget);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -46,42 +30,19 @@ export default function ExpensesPage() {
     }
   }, []);
 
-  const handleLogExpense = async (expenseData: Omit<Expense, 'id'>) => {
-    if (!user) {
-      toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to log an expense.' });
-      return;
+  const handleLogExpense = (expenseData: Omit<Expense, 'id'>) => {
+    const newExpense: Expense = {
+      ...expenseData,
+      id: Date.now().toString(),
+    };
+    if (expenseData.notes) {
+      newExpense.notes = expenseData.notes;
     }
-    try {
-      // Explicitly build the data object to ensure no `undefined` fields are sent.
-      const dataToAdd: { [key: string]: any } = {
-        amount: expenseData.amount,
-        category: expenseData.category,
-        date: expenseData.date,
-        createdAt: serverTimestamp(),
-      };
-      
-      if (expenseData.notes) {
-        dataToAdd.notes = expenseData.notes;
-      }
-      
-      await addDoc(collection(firestore, 'users', user.uid, 'expenses'), dataToAdd);
-
-      toast({ title: 'Success', description: 'Expense logged.' });
-      (document.activeElement as HTMLElement)?.blur();
-      setIsDialogOpen(false);
-    } catch (error) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Failed to log expense.' });
-      console.error(error);
-    }
+    setExpenses((prevExpenses) => [newExpense, ...prevExpenses]);
+    toast({ title: 'Success', description: 'Expense logged.' });
+    (document.activeElement as HTMLElement)?.blur();
+    setIsDialogOpen(false);
   };
-
-  if (isLoading) {
-    return (
-      <div className="flex h-[60vh] w-full items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-8">

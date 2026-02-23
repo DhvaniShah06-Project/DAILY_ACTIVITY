@@ -4,20 +4,17 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Bell, Globe, LogOut, Settings } from 'lucide-react';
+import { Bell, Globe, Settings } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useUser } from '@/firebase';
 
 export function AppHeader() {
-  const { user, signOut } = useUser();
   const pathname = usePathname();
 
   const getInitials = (email?: string | null) => {
@@ -87,23 +84,18 @@ export function AppHeader() {
           <DropdownMenuTrigger asChild>
             <Avatar className="h-9 w-9 cursor-pointer">
               <AvatarImage
-                src={user?.photoURL || "https://picsum.photos/seed/user-avatar/100/100"}
+                src={"https://picsum.photos/seed/user-avatar/100/100"}
                 alt="User avatar"
                 data-ai-hint="person portrait"
               />
-              <AvatarFallback>{getInitials(user?.email)}</AvatarFallback>
+              <AvatarFallback>U</AvatarFallback>
             </Avatar>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>
                 <p className="font-medium">My Account</p>
-                <p className="text-xs text-muted-foreground">{user?.email}</p>
+                <p className="text-xs text-muted-foreground">demo@user.com</p>
             </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={signOut} className="cursor-pointer">
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>Log out</span>
-            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
