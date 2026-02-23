@@ -14,7 +14,6 @@ export const addTask = async (
   userId: string,
   task: Omit<Task, 'id' | 'isCompleted'>
 ) => {
-  // Explicitly build the data object to prevent undefined fields.
   const dataToAdd: { [key: string]: any } = {
     title: task.title,
     category: task.category,
@@ -23,7 +22,7 @@ export const addTask = async (
     createdAt: serverTimestamp(),
   };
 
-  // Only include ingredients if they are provided.
+  // Only include ingredients if they are provided and not an empty array.
   if (task.ingredients && task.ingredients.length > 0) {
     dataToAdd.ingredients = task.ingredients;
   }
@@ -47,8 +46,7 @@ export const addBill = async (
   userId: string,
   bill: Omit<Bill, 'id' | 'status'>
 ) => {
-  // Explicitly build the data object to prevent undefined fields.
-  const dataToAdd = {
+  const dataToAdd: { [key: string]: any } = {
     name: bill.name,
     amount: bill.amount,
     category: bill.category,
@@ -56,6 +54,10 @@ export const addBill = async (
     status: 'unpaid',
     createdAt: serverTimestamp(),
   };
+  
+  if (bill.paymentMethod) {
+    dataToAdd.paymentMethod = bill.paymentMethod;
+  }
 
   await addDoc(collection(db, 'users', userId, 'bills'), dataToAdd);
 };
@@ -67,7 +69,7 @@ export const updateBillStatus = async (
   status: Bill['status']
 ) => {
   const billRef = doc(db, 'users', userId, 'bills', billId);
-  const dataToUpdate: { status: Bill['status']; paymentDate?: Date | null } = {
+  const dataToUpdate: { [key: string]: any } = {
     status,
   };
   if (status === 'paid') {
@@ -84,7 +86,6 @@ export const addExpense = async (
   userId: string,
   expense: Omit<Expense, 'id'>
 ) => {
-  // Explicitly build the data object to prevent undefined fields.
   const dataToAdd: { [key: string]: any } = {
     amount: expense.amount,
     category: expense.category,
@@ -92,8 +93,8 @@ export const addExpense = async (
     createdAt: serverTimestamp(),
   };
   
-  // Only include notes if they are provided.
-  if (expense.notes) {
+  // Only include notes if it's a non-empty string.
+  if (expense.notes && expense.notes.trim() !== '') {
     dataToAdd.notes = expense.notes;
   }
 
