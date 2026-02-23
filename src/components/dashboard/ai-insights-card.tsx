@@ -34,53 +34,14 @@ export function AiInsightsCard({ expenses, budget }: AiInsightsCardProps) {
   const getSuggestion = async () => {
     setIsLoading(true);
     setSuggestion(null);
-    try {
-      const spendingCategories = expenses.reduce((acc, expense) => {
-        const existing = acc.find((e) => e.category === expense.category);
-        if (existing) {
-          existing.amount += expense.amount;
-        } else {
-          acc.push({ category: expense.category, amount: expense.amount });
-        }
-        return acc;
-      }, [] as { category: string; amount: number }[]);
 
-      const payload = {
-        spendingCategories,
-        budget: {
-          totalBudget: budget.total,
-          categoryBudgets: budget.categories.map((c) => ({
-            category: c.name,
-            amount: c.total,
-          })),
-        },
-        financialGoals: 'Save for a vacation and reduce unnecessary spending.',
-      };
+    // Simulate API call
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      const response = await fetch('/api/ai/suggestions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
+    const dummySuggestion = `Based on your spending, you're doing great with your 'Transport' budget. However, you've gone slightly over on 'Entertainment'. Consider looking for free events or a movie night at home to save some extra cash for your vacation goal!`;
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch suggestions from API');
-      }
-
-      const result = await response.json();
-      setSuggestion(result.suggestions);
-    } catch (error) {
-      console.error('Failed to get saving suggestions:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Could not fetch AI suggestions. Please try again later.',
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    setSuggestion(dummySuggestion);
+    setIsLoading(false);
   };
 
   return (

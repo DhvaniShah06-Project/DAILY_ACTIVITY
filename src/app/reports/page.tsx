@@ -13,14 +13,21 @@ import { FileDown, Loader2 } from 'lucide-react';
 import { SpendingPieChart } from './components/spending-pie-chart';
 import { HistoricalBarChart } from './components/historical-bar-chart';
 import { TaskCompletionReport } from './components/task-completion-report';
-import type { GenerateMonthlySpendingSummaryOutput } from '@/ai/flows/generate-monthly-spending-summary';
 import { useToast } from '@/hooks/use-toast';
 import type { Expense } from '@/lib/types';
 import { expenses as mockExpenses } from '@/lib/data';
 
+// This defines the shape of the dummy data we'll create.
+type DummySummaryOutput = {
+    totalSpending: number;
+    categoryBreakdown: any[]; // Not used in UI, can be empty
+    summaryText: string;
+    tips: string[];
+}
+
 export default function ReportsPage() {
     const { toast } = useToast();
-    const [summary, setSummary] = useState<GenerateMonthlySpendingSummaryOutput | null>(null);
+    const [summary, setSummary] = useState<DummySummaryOutput | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [expenses] = useState<Expense[]>(mockExpenses);
 
@@ -35,34 +42,22 @@ export default function ReportsPage() {
         }
         setIsLoading(true);
         setSummary(null);
-        try {
-            const payload = {
-                month: "Last 30 days",
-                expenses: expenses.map(e => ({ category: e.category, amount: e.amount, description: e.notes})),
-            };
+        
+        // Simulate API call
+        await new Promise(resolve => setTimeout(resolve, 1500));
 
-            const response = await fetch('/api/ai/spending-summary', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to fetch AI summary from API.');
-            }
-
-            const result = await response.json();
-            setSummary(result);
-        } catch (error) {
-            console.error('Failed to generate summary:', error);
-            toast({
-                variant: 'destructive',
-                title: 'Error',
-                description: 'Could not generate AI summary.',
-            });
-        } finally {
-            setIsLoading(false);
-        }
+        const dummySummary: DummySummaryOutput = {
+            totalSpending: expenses.reduce((acc, e) => acc + e.amount, 0),
+            categoryBreakdown: [], // Not used in the UI, can be empty
+            summaryText: "This month, your spending was highest in the 'Grocery' category. Your 'Entertainment' spending was moderate, which is great for your savings goals.",
+            tips: [
+                "Try meal planning to reduce grocery costs.",
+                "Look for free community events to cut down on entertainment spending."
+            ]
+        };
+        
+        setSummary(dummySummary);
+        setIsLoading(false);
     };
 
   return (

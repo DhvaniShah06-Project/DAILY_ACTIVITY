@@ -27,27 +27,19 @@ export function LocationReminderCard() {
     setIsLoading(true);
     setReminder(null);
 
+    // This function might ask for location permissions, but we'll use a dummy response.
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         try {
-          const { latitude, longitude } = position.coords;
-          const payload = {
-            userLocation: { latitude, longitude },
-            userNeeds: needs,
-          };
+          // We don't need to call an API, but we'll simulate the delay.
+          await new Promise(resolve => setTimeout(resolve, 1000));
           
-          const response = await fetch('/api/ai/reminders', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-          });
+          const dummyReminder = {
+            text: `Since you need to '${needs}', remember to stop by a store soon!`,
+            relevant: true, // Assume it's always relevant for the demo
+          };
 
-          if (!response.ok) {
-            throw new Error('Failed to fetch reminder from API.');
-          }
-
-          const result = await response.json();
-          setReminder({ text: result.reminder, relevant: result.isRelevant });
+          setReminder(dummyReminder);
         } catch (error) {
           console.error('Failed to get reminder:', error);
           toast({
@@ -60,6 +52,7 @@ export function LocationReminderCard() {
         }
       },
       (error) => {
+        // Handle cases where location is denied by the user.
         console.error('Geolocation error:', error);
         toast({
           variant: 'destructive',

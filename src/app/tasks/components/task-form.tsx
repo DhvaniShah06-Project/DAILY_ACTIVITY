@@ -72,33 +72,14 @@ export function TaskForm({ onSubmit, selectedDate }: TaskFormProps) {
     }
     setIsSuggesting(true);
     setSuggestions([]);
-    try {
-      const payload = {
-        ingredients: ingredients.split(',').map((i) => i.trim()),
-        timeOfDay: 'Dinner',
-      };
-      
-      const response = await fetch('/api/ai/dishes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch AI suggestions from API.');
-      }
-
-      const result = await response.json();
-      setSuggestions(result.dishNames);
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Could not fetch AI suggestions.',
-      });
-    } finally {
-      setIsSuggesting(false);
-    }
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    const dummySuggestions = ['Chicken Curry', 'Tomato Soup', 'Vegetable Stir-fry'];
+    setSuggestions(dummySuggestions);
+    
+    setIsSuggesting(false);
   };
 
   const handleFormSubmit = (data: TaskFormValues) => {
@@ -191,7 +172,7 @@ export function TaskForm({ onSubmit, selectedDate }: TaskFormProps) {
                   <Button
                     type="button"
                     size="sm"
-                    className="absolute bottom-2 right-2"
+                    className="absolute bottom-2 right-2 flex items-center gap-2"
                     onClick={handleGetSuggestions}
                     disabled={isSuggesting || !ingredients}
                   >
@@ -225,7 +206,7 @@ export function TaskForm({ onSubmit, selectedDate }: TaskFormProps) {
                       )}
                     >
                       {field.value ? (
-                        format(field.value, 'MMMM do, yyyy')
+                        format(field.value, "MMMM do, yyyy")
                       ) : (
                         <span>Pick a date</span>
                       )}
