@@ -16,6 +16,7 @@ import { TaskCompletionReport } from './components/task-completion-report';
 import { useToast } from '@/hooks/use-toast';
 import type { Expense, Task } from '@/lib/types';
 import { expenses as dummyExpenses, tasks as dummyTasks } from '@/lib/data';
+import { useUser } from '@/firebase';
 
 type SummaryOutput = {
     totalSpending: number;
@@ -26,14 +27,19 @@ type SummaryOutput = {
 
 export default function ReportsPage() {
     const { toast } = useToast();
+    const { user } = useUser();
     const [summary, setSummary] = useState<SummaryOutput | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [expenses, setExpenses] = useState<Expense[]>([]);
     const [tasks, setTasks] = useState<Task[]>([]);
+    const [isInitialLoad, setIsInitialLoad] = useState(true);
+
+    const getStorageKey = (key: string) => user ? `${key}_${user.uid}` : key;
 
     useEffect(() => {
+        if (!user || !isInitialLoad) return;
         try {
-            const storedExpenses = localStorage.getItem('expenses');
+            const storedExpenses = localStorage.getItem(getStorageKey('expenses'));
             if (storedExpenses) {
                 const parsedExpenses = JSON.parse(storedExpenses).map((expense: any) => ({
                     ...expense,
@@ -44,7 +50,7 @@ export default function ReportsPage() {
                 setExpenses(dummyExpenses);
             }
 
-            const storedTasks = localStorage.getItem('tasks');
+            const storedTasks = localStorage.getItem(getStorageKey('tasks'));
             if (storedTasks) {
                 const parsedTasks = JSON.parse(storedTasks).map((task: any) => ({
                     ...task,
@@ -58,8 +64,18 @@ export default function ReportsPage() {
             console.error("Failed to load data from localStorage", error);
             setExpenses(dummyExpenses);
             setTasks(dummyTasks);
+        } finally {
+            setIsInitialLoad(false);
         }
-    }, []);
+    }, [user, isInitialLoad]);
+
+    useEffect(() => {
+        if (!isInitialLoad && user) {
+            localStorage.setItem(getStorageKey('expenses'), JSON.stringify(expenses));
+            localStorage.setItem(getStorageKey('tasks'), JSON.stringify(tasks));
+        }
+    }, [expenses, tasks, isInitialLoad, user]);
+
 
     const getSummary = async () => {
         if (!expenses || expenses.length === 0) {
@@ -104,7 +120,7 @@ export default function ReportsPage() {
             <CardHeader>
                 <CardTitle className="font-headline">AI Monthly Summary</CardTitle>
                 <CardDescription>An AI-generated summary of your spending patterns and habits.</CardDescription>
-            </Header>
+            </CardHeader>
             <CardContent>
                  {isLoading ? (
                     <div className="flex items-center justify-center min-h-[10rem]">
