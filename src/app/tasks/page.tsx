@@ -41,18 +41,22 @@ export default function TasksPage() {
     setIsLoading(true);
     const tasksQuery = query(collection(db, 'users', user.uid, 'tasks'));
     const unsubscribe = onSnapshot(tasksQuery, async (snapshot) => {
-      if (snapshot.empty) {
+      if (snapshot.empty && user) {
         // One-time seed for new users
         try {
           const batch = writeBatch(db);
           const tasksCol = collection(db, 'users', user.uid, 'tasks');
           dummyTasks.forEach((task) => {
-            const docRef = doc(tasksCol); // Create a new doc with a random ID
-            batch.set(docRef, { ...task, id: undefined, createdAt: serverTimestamp() });
+            const docRef = doc(tasksCol);
+            const { id, ...taskData } = task; // Destructure to remove the local id
+            batch.set(docRef, { ...taskData, createdAt: serverTimestamp() });
           });
           await batch.commit();
         } catch (e) {
             console.error("Error seeding tasks: ", e);
+             if (e instanceof Error) {
+                toast({ variant: 'destructive', title: 'Seeding Error', description: `Could not pre-populate tasks: ${e.message}` });
+            }
         }
       } else {
         const fetchedTasks = snapshot.docs.map(doc => {
@@ -92,7 +96,6 @@ export default function TasksPage() {
       return;
     }
     
-    // Explicitly build the object to save to prevent 'undefined' values
     const dataToSave: { [key: string]: any } = {
       title: taskData.title,
       category: taskData.category,
@@ -107,6 +110,10 @@ export default function TasksPage() {
 
     const collectionRef = collection(db, 'users', user.uid, 'tasks');
     addDoc(collectionRef, dataToSave)
+      .then(() => {
+        toast({ title: 'Success', description: 'Task added successfully.' });
+        setIsDialogOpen(false);
+      })
       .catch(async (serverError) => {
         const permissionError = new FirestorePermissionError({
           path: collectionRef.path,
@@ -115,9 +122,6 @@ export default function TasksPage() {
         });
         errorEmitter.emit('permission-error', permissionError);
       });
-      
-    toast({ title: 'Success', description: 'Task added successfully.' });
-    setIsDialogOpen(false);
   };
 
   const toggleTaskCompletion = (taskId: string) => {

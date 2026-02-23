@@ -40,18 +40,22 @@ export default function BillsPage() {
     setIsLoading(true);
     const billsQuery = query(collection(db, 'users', user.uid, 'bills'));
     const unsubscribe = onSnapshot(billsQuery, async (snapshot) => {
-      if (snapshot.empty) {
+      if (snapshot.empty && user) {
         // One-time seed
         try {
           const batch = writeBatch(db);
           const billsCol = collection(db, 'users', user.uid, 'bills');
           dummyBills.forEach((bill) => {
             const docRef = doc(billsCol);
-            batch.set(docRef, { ...bill, id: undefined, createdAt: serverTimestamp() });
+            const { id, ...billData } = bill;
+            batch.set(docRef, { ...billData, createdAt: serverTimestamp() });
           });
           await batch.commit();
         } catch (e) {
           console.error("Error seeding bills: ", e);
+          if (e instanceof Error) {
+            toast({ variant: 'destructive', title: 'Seeding Error', description: `Could not pre-populate bills: ${e.message}` });
+          }
         }
       } else {
         const fetchedBills = snapshot.docs.map(doc => {
@@ -103,6 +107,10 @@ export default function BillsPage() {
 
     const collectionRef = collection(db, 'users', user.uid, 'bills');
     addDoc(collectionRef, dataToSave)
+      .then(() => {
+        toast({ title: 'Success', description: 'Bill added successfully.' });
+        setIsDialogOpen(false);
+      })
       .catch(async (serverError) => {
         const permissionError = new FirestorePermissionError({
           path: collectionRef.path,
@@ -111,9 +119,6 @@ export default function BillsPage() {
         });
         errorEmitter.emit('permission-error', permissionError);
       });
-      
-    toast({ title: 'Success', description: 'Bill added successfully.' });
-    setIsDialogOpen(false);
   };
 
   const handleUpdateBillStatus = (billId: string, status: Bill['status']) => {

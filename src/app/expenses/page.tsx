@@ -51,18 +51,22 @@ export default function ExpensesPage() {
     setIsLoading(true);
     const expensesQuery = query(collection(db, 'users', user.uid, 'expenses'));
     const unsubscribe = onSnapshot(expensesQuery, async (snapshot) => {
-      if (snapshot.empty) {
+      if (snapshot.empty && user) {
         // One-time seed
         try {
           const batch = writeBatch(db);
           const expensesCol = collection(db, 'users', user.uid, 'expenses');
           dummyExpenses.forEach((expense) => {
             const docRef = doc(expensesCol);
-            batch.set(docRef, { ...expense, id: undefined, createdAt: serverTimestamp() });
+            const { id, ...expenseData } = expense;
+            batch.set(docRef, { ...expenseData, createdAt: serverTimestamp() });
           });
           await batch.commit();
         } catch (e) {
           console.error("Error seeding expenses: ", e);
+           if (e instanceof Error) {
+            toast({ variant: 'destructive', title: 'Seeding Error', description: `Could not pre-populate expenses: ${e.message}` });
+          }
         }
       } else {
         const fetchedExpenses = snapshot.docs.map(doc => {
@@ -111,6 +115,10 @@ export default function ExpensesPage() {
 
     const collectionRef = collection(db, 'users', user.uid, 'expenses');
     addDoc(collectionRef, dataToSave)
+      .then(() => {
+        toast({ title: 'Success', description: 'Expense logged.' });
+        setIsDialogOpen(false);
+      })
       .catch(async (serverError) => {
         const permissionError = new FirestorePermissionError({
           path: collectionRef.path,
@@ -119,9 +127,6 @@ export default function ExpensesPage() {
         });
         errorEmitter.emit('permission-error', permissionError);
       });
-      
-    toast({ title: 'Success', description: 'Expense logged.' });
-    setIsDialogOpen(false);
   };
 
   return (
