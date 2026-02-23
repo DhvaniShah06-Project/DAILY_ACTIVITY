@@ -28,34 +28,15 @@ export function LocationReminderCard() {
     setReminder(null);
 
     navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const { latitude, longitude } = position.coords;
-        try {
-          const response = await fetch('/api/ai/reminders', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              userLocation: { latitude, longitude },
-              userNeeds: needs,
-            }),
+      (position) => {
+        // Simulate AI response with a delay
+        setTimeout(() => {
+          setReminder({
+            reminder: `Since you're out, don't forget: ${needs}! It looks like a good time to get it done.`,
+            isRelevant: true,
           });
-          
-          if (!response.ok) {
-            throw new Error('Failed to fetch reminder from API');
-          }
-          
-          const result = await response.json();
-          setReminder(result);
-        } catch (error) {
-          console.error('Failed to get reminder:', error);
-          toast({
-            variant: 'destructive',
-            title: 'AI Error',
-            description: 'Could not generate a reminder.',
-          });
-        } finally {
           setIsLoading(false);
-        }
+        }, 1500);
       },
       (error) => {
         console.error('Geolocation error:', error);
@@ -99,7 +80,7 @@ export function LocationReminderCard() {
           )}
         </Button>
         {reminder && (
-          <Alert variant={reminder.isRelevant ? 'success' : 'destructive'}>
+          <Alert variant={reminder.isRelevant ? 'success' : 'default'}>
             <BellRing className="h-4 w-4" />
             <AlertTitle>Smart Reminder</AlertTitle>
             <AlertDescription>{reminder.reminder}</AlertDescription>

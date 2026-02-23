@@ -36,46 +36,15 @@ export function AiInsightsCard({ expenses, budget }: AiInsightsCardProps) {
     setIsLoading(true);
     setSuggestion(null);
 
-    const spendingCategories = budget.categories.map(c => ({
-        category: c.name,
-        amount: c.spent,
-    }));
-    
-    const categoryBudgets = budget.categories.map(c => ({
-        category: c.name,
-        amount: c.total,
-    }));
-
-    try {
-      const response = await fetch('/api/ai/suggestions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          spendingCategories,
-          budget: {
-            totalBudget: budget.total,
-            categoryBudgets,
-          },
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch suggestions from API');
+    // Simulate AI response with a delay
+    setTimeout(() => {
+      if (expenses.length > 0) {
+        setSuggestion("Based on your spending, you're doing a great job managing your budget. Your largest expense category is 'Grocery'. Consider looking for sales to save more!");
+      } else {
+        setSuggestion("Start logging expenses to get personalized saving tips.");
       }
-
-      const result = await response.json();
-      setSuggestion(result.suggestions);
-
-    } catch (error) {
-      console.error('Error fetching AI suggestions:', error);
-      toast({
-        variant: 'destructive',
-        title: 'AI Error',
-        description: 'Could not fetch saving suggestions.',
-      });
-    } finally {
-        setIsLoading(false);
-    }
+      setIsLoading(false);
+    }, 1500);
   };
 
   return (

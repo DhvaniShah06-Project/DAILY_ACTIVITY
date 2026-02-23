@@ -26,34 +26,11 @@ export function PaymentTips({ bills }: PaymentTipsProps) {
     setIsLoading(true);
     setTips(null);
 
-    const mappedBills = bills.map(b => ({
-        name: b.name,
-        amount: b.amount,
-        dueDate: b.dueDate.toISOString().split('T')[0],
-        paymentDate: b.paymentDate?.toISOString().split('T')[0],
-        status: b.status,
-        category: b.category,
-    }))
-
-    try {
-        const response = await fetch('/api/ai/bill-tips', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ billHistory: mappedBills }),
-        });
-
-        if (!response.ok) {
-            throw new Error('Failed to fetch tips from API');
-        }
-
-        const result = await response.json();
-        setTips(result.tips);
-    } catch (error) {
-        console.error('Error fetching payment tips:', error);
-        toast({ variant: 'destructive', title: 'AI Error', description: 'Could not fetch payment tips.' });
-    } finally {
+    // Simulate AI response with a delay
+    setTimeout(() => {
+        setTips("To better manage your bills, consider setting up automatic payments for recurring expenses like subscriptions. Also, review your bills for any unusual charges to catch errors early.");
         setIsLoading(false);
-    }
+    }, 1500);
   };
 
   return (
