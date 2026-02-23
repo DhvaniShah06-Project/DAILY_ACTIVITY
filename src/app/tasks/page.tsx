@@ -19,8 +19,6 @@ import { isSameDay } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore } from '@/firebase';
 import { collection, addDoc, doc, updateDoc, serverTimestamp, onSnapshot, query } from 'firebase/firestore';
-import { cleanData } from '@/lib/data-cleaner';
-
 
 export default function TasksPage() {
   const { toast } = useToast();
@@ -75,14 +73,21 @@ export default function TasksPage() {
       });
       return;
     }
-    const dataToSave = {
-      ...taskData,
-      createdAt: serverTimestamp(),
+    
+    const dataToSave: { [key: string]: any } = {
+      title: taskData.title,
+      category: taskData.category,
+      dueDate: taskData.dueDate,
       isCompleted: false,
+      createdAt: serverTimestamp(),
     };
+
+    if (taskData.ingredients && taskData.ingredients.length > 0) {
+      dataToSave.ingredients = taskData.ingredients;
+    }
+
     try {
-      const cleanedData = cleanData(dataToSave);
-      await addDoc(collection(db, 'users', user.uid, 'tasks'), cleanedData);
+      await addDoc(collection(db, 'users', user.uid, 'tasks'), dataToSave);
 
       toast({ title: 'Success', description: 'Task added successfully.' });
       setIsDialogOpen(false);
@@ -114,9 +119,9 @@ export default function TasksPage() {
     }
   };
 
-  const tasksForSelectedDate = tasks.filter((task) =>
+  const tasksForSelectedDate = useMemo(() => tasks.filter((task) =>
     isSameDay(task.dueDate, selectedDate)
-  );
+  ), [tasks, selectedDate]);
 
   return (
     <div className="space-y-8">

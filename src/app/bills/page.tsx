@@ -17,8 +17,7 @@ import {
 import { BillForm } from './components/bill-form';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore } from '@/firebase';
-import { collection, addDoc, doc, updateDoc, serverTimestamp, onSnapshot, query, where, Timestamp } from 'firebase/firestore';
-import { cleanData } from '@/lib/data-cleaner';
+import { collection, addDoc, doc, updateDoc, serverTimestamp, onSnapshot, query, where } from 'firebase/firestore';
 
 
 export default function BillsPage() {
@@ -71,15 +70,21 @@ export default function BillsPage() {
       return;
     }
 
-    const dataToSave = {
-      ...billData,
+    const dataToSave: { [key: string]: any } = {
+      name: billData.name,
+      amount: billData.amount,
+      category: billData.category,
+      dueDate: billData.dueDate,
       status: 'unpaid',
       createdAt: serverTimestamp(),
     };
 
+    if (billData.paymentMethod) {
+        dataToSave.paymentMethod = billData.paymentMethod;
+    }
+
     try {
-      const cleanedData = cleanData(dataToSave);
-      await addDoc(collection(db, 'users', user.uid, 'bills'), cleanedData);
+      await addDoc(collection(db, 'users', user.uid, 'bills'), dataToSave);
       toast({ title: 'Success', description: 'Bill added successfully.' });
       setIsDialogOpen(false);
     } catch(error) {
@@ -92,15 +97,15 @@ export default function BillsPage() {
     if (!user) return;
     const billRef = doc(db, 'users', user.uid, 'bills', billId);
     
-    const dataToUpdate: { status: Bill['status'], paymentDate?: Timestamp | null } = { status };
+    const dataToUpdate: { [key: string]: any } = { status };
     if (status === 'paid') {
-      dataToUpdate.paymentDate = Timestamp.now();
+      dataToUpdate.paymentDate = serverTimestamp();
     } else {
       dataToUpdate.paymentDate = null;
     }
 
     try {
-      await updateDoc(billRef, cleanData(dataToUpdate));
+      await updateDoc(billRef, dataToUpdate);
     } catch(error) {
        console.error("Error updating bill status:", error);
       toast({ variant: 'destructive', title: 'Error', description: 'Failed to update bill status.' });

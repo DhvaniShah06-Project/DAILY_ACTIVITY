@@ -18,8 +18,6 @@ import { ExpenseForm } from './components/expense-form';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore } from '@/firebase';
 import { collection, addDoc, serverTimestamp, onSnapshot, query } from 'firebase/firestore';
-import { cleanData } from '@/lib/data-cleaner';
-
 
 export default function ExpensesPage() {
   const { toast } = useToast();
@@ -81,13 +79,20 @@ export default function ExpensesPage() {
       toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in.' });
       return;
     }
-     const dataToSave = {
-      ...expenseData,
+    
+    const dataToSave: { [key: string]: any } = {
+      amount: expenseData.amount,
+      category: expenseData.category,
+      date: expenseData.date,
       createdAt: serverTimestamp(),
     };
+
+    if (expenseData.notes) {
+      dataToSave.notes = expenseData.notes;
+    }
+
     try {
-      const cleanedData = cleanData(dataToSave);
-      await addDoc(collection(db, 'users', user.uid, 'expenses'), cleanedData);
+      await addDoc(collection(db, 'users', user.uid, 'expenses'), dataToSave);
       toast({ title: 'Success', description: 'Expense logged.' });
       setIsDialogOpen(false);
     } catch (error) {
