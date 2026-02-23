@@ -20,7 +20,6 @@ import { useUser, useFirestore } from '@/firebase';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { collection, Timestamp, addDoc, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { removeUndefinedFields } from '@/lib/data-utils';
 
 export default function ExpensesPage() {
   const { user } = useUser();
@@ -53,15 +52,19 @@ export default function ExpensesPage() {
       return;
     }
     try {
-      const dataToAdd: any = {
+      // Explicitly build the data object to avoid undefined fields
+      const dataToAdd: { [key: string]: any } = {
         amount: expenseData.amount,
         category: expenseData.category,
         date: expenseData.date,
         createdAt: serverTimestamp(),
-        notes: expenseData.notes,
       };
       
-      await addDoc(collection(firestore, 'users', user.uid, 'expenses'), removeUndefinedFields(dataToAdd));
+      if (expenseData.notes) {
+        dataToAdd.notes = expenseData.notes;
+      }
+      
+      await addDoc(collection(firestore, 'users', user.uid, 'expenses'), dataToAdd);
 
       toast({ title: 'Success', description: 'Expense logged.' });
       (document.activeElement as HTMLElement)?.blur();

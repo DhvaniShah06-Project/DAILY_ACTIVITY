@@ -108,8 +108,8 @@ export function TaskForm({ onSubmit, selectedDate }: TaskFormProps) {
       dueDate: data.dueDate,
     };
 
-    if (data.ingredients && data.ingredients.trim()) {
-      taskData.ingredients = data.ingredients.split(',').map((i) => i.trim());
+    if (data.ingredients && data.ingredients.trim().length > 0) {
+      taskData.ingredients = data.ingredients.split(',').map((i) => i.trim()).filter(i => i.length > 0);
     }
 
     onSubmit(taskData);

@@ -54,8 +54,8 @@ export function ExpenseForm({ onSubmit }: ExpenseFormProps) {
       date: data.date,
     };
     
-    if (data.notes && data.notes.trim()) {
-      expenseData.notes = data.notes;
+    if (data.notes && data.notes.trim().length > 0) {
+      expenseData.notes = data.notes.trim();
     }
     
     onSubmit(expenseData);
