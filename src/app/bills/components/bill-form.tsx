@@ -32,6 +32,7 @@ const billSchema = z.object({
   amount: z.coerce.number().min(0.01, 'Amount must be greater than 0.'),
   category: z.enum(['Utilities', 'Subscription', 'Rent', 'Other']),
   dueDate: z.date({ required_error: 'A due date is required.' }),
+  paymentMethod: z.string().optional(),
 });
 
 type BillFormValues = z.infer<typeof billSchema>;
@@ -47,11 +48,21 @@ export function BillForm({ onSubmit }: BillFormProps) {
       name: '',
       amount: 0,
       category: 'Utilities',
+      paymentMethod: '',
     },
   });
 
   const handleFormSubmit = (data: BillFormValues) => {
-    onSubmit(data);
+    const billData: Omit<Bill, 'id' | 'status'> = {
+      name: data.name,
+      amount: data.amount,
+      category: data.category,
+      dueDate: data.dueDate,
+    };
+    if (data.paymentMethod && data.paymentMethod.trim() !== '') {
+      billData.paymentMethod = data.paymentMethod;
+    }
+    onSubmit(billData);
     form.reset();
   };
 
@@ -141,6 +152,19 @@ export function BillForm({ onSubmit }: BillFormProps) {
                   />
                 </PopoverContent>
               </Popover>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="paymentMethod"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Payment Method (Optional)</FormLabel>
+              <FormControl>
+                <Input placeholder="e.g., Credit Card" {...field} />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}

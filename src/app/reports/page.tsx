@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -15,21 +15,45 @@ import { HistoricalBarChart } from './components/historical-bar-chart';
 import { TaskCompletionReport } from './components/task-completion-report';
 import { useToast } from '@/hooks/use-toast';
 import type { Expense } from '@/lib/types';
-import { expenses as mockExpenses } from '@/lib/data';
+import { useUser, useFirestore } from '@/firebase';
+import { collection, onSnapshot, query } from 'firebase/firestore';
 
-// This defines the shape of the dummy data we'll create.
-type DummySummaryOutput = {
+type SummaryOutput = {
     totalSpending: number;
-    categoryBreakdown: any[]; // Not used in UI, can be empty
+    categoryBreakdown: any[];
     summaryText: string;
     tips: string[];
 }
 
 export default function ReportsPage() {
     const { toast } = useToast();
-    const [summary, setSummary] = useState<DummySummaryOutput | null>(null);
+    const { user } = useUser();
+    const db = useFirestore();
+    const [summary, setSummary] = useState<SummaryOutput | null>(null);
     const [isLoading, setIsLoading] = useState(false);
-    const [expenses] = useState<Expense[]>(mockExpenses);
+    const [expenses, setExpenses] = useState<Expense[]>([]);
+    const [isLoadingExpenses, setIsLoadingExpenses] = useState(true);
+
+    useEffect(() => {
+        if (!user) {
+            setIsLoadingExpenses(false);
+            return;
+        }
+        const expensesQuery = query(collection(db, 'users', user.uid, 'expenses'));
+        const unsubscribe = onSnapshot(expensesQuery, (snapshot) => {
+            const fetchedExpenses = snapshot.docs.map(doc => {
+                const data = doc.data();
+                return {
+                    id: doc.id,
+                    ...data,
+                    date: data.date?.toDate ? data.date.toDate() : new Date(),
+                } as Expense;
+            });
+            setExpenses(fetchedExpenses);
+            setIsLoadingExpenses(false);
+        });
+        return () => unsubscribe();
+    }, [user, db]);
 
     const getSummary = async () => {
         if (!expenses || expenses.length === 0) {
@@ -43,21 +67,35 @@ export default function ReportsPage() {
         setIsLoading(true);
         setSummary(null);
         
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        const apiExpenses = expenses.map(e => ({
+            category: e.category,
+            amount: e.amount,
+            description: e.notes,
+        }));
 
-        const dummySummary: DummySummaryOutput = {
-            totalSpending: expenses.reduce((acc, e) => acc + e.amount, 0),
-            categoryBreakdown: [], // Not used in the UI, can be empty
-            summaryText: "This month, your spending was highest in the 'Grocery' category. Your 'Entertainment' spending was moderate, which is great for your savings goals.",
-            tips: [
-                "Try meal planning to reduce grocery costs.",
-                "Look for free community events to cut down on entertainment spending."
-            ]
-        };
-        
-        setSummary(dummySummary);
-        setIsLoading(false);
+        try {
+            const response = await fetch('/api/ai/spending-summary', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    month: new Date().toLocaleString('default', { month: 'long', year: 'numeric' }),
+                    expenses: apiExpenses,
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch summary from API');
+            }
+            
+            const result = await response.json();
+            setSummary(result);
+
+        } catch (error) {
+             console.error('Error fetching summary:', error);
+             toast({ variant: 'destructive', title: 'AI Error', description: 'Could not fetch summary.' });
+        } finally {
+            setIsLoading(false);
+        }
     };
 
   return (
@@ -98,7 +136,9 @@ export default function ReportsPage() {
                 ) : (
                     <div className="text-center py-8">
                         <p className="text-muted-foreground mb-4">Generate an AI summary of your monthly finances.</p>
-                        <Button onClick={getSummary} disabled={expenses.length === 0}>Generate Summary</Button>
+                        <Button onClick={getSummary} disabled={isLoadingExpenses || expenses.length === 0}>
+                            {isLoadingExpenses ? 'Loading expenses...' : 'Generate Summary'}
+                        </Button>
                     </div>
                 )}
             </CardContent>

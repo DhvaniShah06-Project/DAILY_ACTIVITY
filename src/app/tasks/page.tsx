@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useMemo } from 'react';
 import type { Task } from '@/lib/types';
+import { tasks as dummyTasks } from '@/lib/data';
 import { PlusCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -18,7 +19,7 @@ import { DateSelector } from './components/date-selector';
 import { isSameDay } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore } from '@/firebase';
-import { collection, addDoc, doc, updateDoc, serverTimestamp, onSnapshot, query } from 'firebase/firestore';
+import { collection, addDoc, doc, updateDoc, serverTimestamp, onSnapshot, query, writeBatch } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
@@ -39,16 +40,31 @@ export default function TasksPage() {
     }
     setIsLoading(true);
     const tasksQuery = query(collection(db, 'users', user.uid, 'tasks'));
-    const unsubscribe = onSnapshot(tasksQuery, (snapshot) => {
-      const fetchedTasks = snapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          ...data,
-          dueDate: data.dueDate?.toDate ? data.dueDate.toDate() : new Date(),
-        } as Task;
-      });
-      setTasks(fetchedTasks);
+    const unsubscribe = onSnapshot(tasksQuery, async (snapshot) => {
+      if (snapshot.empty) {
+        // One-time seed for new users
+        try {
+          const batch = writeBatch(db);
+          const tasksCol = collection(db, 'users', user.uid, 'tasks');
+          dummyTasks.forEach((task) => {
+            const docRef = doc(tasksCol); // Create a new doc with a random ID
+            batch.set(docRef, { ...task, id: undefined, createdAt: serverTimestamp() });
+          });
+          await batch.commit();
+        } catch (e) {
+            console.error("Error seeding tasks: ", e);
+        }
+      } else {
+        const fetchedTasks = snapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            dueDate: data.dueDate?.toDate ? data.dueDate.toDate() : new Date(),
+          } as Task;
+        });
+        setTasks(fetchedTasks);
+      }
       setIsLoading(false);
     }, (error) => {
       console.error("Error fetching tasks: ", error);
@@ -76,6 +92,7 @@ export default function TasksPage() {
       return;
     }
     
+    // Explicitly build the object to save to prevent 'undefined' values
     const dataToSave: { [key: string]: any } = {
       title: taskData.title,
       category: taskData.category,

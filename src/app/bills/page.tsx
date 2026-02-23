@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import type { Bill } from '@/lib/types';
+import { bills as dummyBills } from '@/lib/data';
 import { PlusCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/empty-state';
@@ -17,7 +18,7 @@ import {
 import { BillForm } from './components/bill-form';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore } from '@/firebase';
-import { collection, addDoc, doc, updateDoc, serverTimestamp, onSnapshot, query, where } from 'firebase/firestore';
+import { collection, addDoc, doc, updateDoc, serverTimestamp, onSnapshot, query, writeBatch } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
@@ -38,17 +39,32 @@ export default function BillsPage() {
     }
     setIsLoading(true);
     const billsQuery = query(collection(db, 'users', user.uid, 'bills'));
-    const unsubscribe = onSnapshot(billsQuery, (snapshot) => {
-      const fetchedBills = snapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          ...data,
-          dueDate: data.dueDate?.toDate ? data.dueDate.toDate() : new Date(),
-          paymentDate: data.paymentDate?.toDate ? data.paymentDate.toDate() : undefined,
-        } as Bill;
-      });
-      setBills(fetchedBills);
+    const unsubscribe = onSnapshot(billsQuery, async (snapshot) => {
+      if (snapshot.empty) {
+        // One-time seed
+        try {
+          const batch = writeBatch(db);
+          const billsCol = collection(db, 'users', user.uid, 'bills');
+          dummyBills.forEach((bill) => {
+            const docRef = doc(billsCol);
+            batch.set(docRef, { ...bill, id: undefined, createdAt: serverTimestamp() });
+          });
+          await batch.commit();
+        } catch (e) {
+          console.error("Error seeding bills: ", e);
+        }
+      } else {
+        const fetchedBills = snapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            dueDate: data.dueDate?.toDate ? data.dueDate.toDate() : new Date(),
+            paymentDate: data.paymentDate?.toDate ? data.paymentDate.toDate() : undefined,
+          } as Bill;
+        });
+        setBills(fetchedBills);
+      }
       setIsLoading(false);
     }, (error) => {
       console.error("Error fetching bills: ", error);

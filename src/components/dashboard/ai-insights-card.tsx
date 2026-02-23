@@ -10,6 +10,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 import type { Expense } from '@/lib/types';
 
 type BudgetData = {
@@ -29,18 +30,52 @@ type AiInsightsCardProps = {
 export function AiInsightsCard({ expenses, budget }: AiInsightsCardProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [suggestion, setSuggestion] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const getSuggestion = async () => {
     setIsLoading(true);
     setSuggestion(null);
 
-    // Simulate API call with a timeout
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    const spendingCategories = budget.categories.map(c => ({
+        category: c.name,
+        amount: c.spent,
+    }));
+    
+    const categoryBudgets = budget.categories.map(c => ({
+        category: c.name,
+        amount: c.total,
+    }));
 
-    const dummySuggestion = `Based on your spending, you're doing great with your 'Transport' budget. However, you've gone slightly over on 'Entertainment'. Consider looking for free events or a movie night at home to save some extra cash for your vacation goal!`;
+    try {
+      const response = await fetch('/api/ai/suggestions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          spendingCategories,
+          budget: {
+            totalBudget: budget.total,
+            categoryBudgets,
+          },
+        }),
+      });
 
-    setSuggestion(dummySuggestion);
-    setIsLoading(false);
+      if (!response.ok) {
+        throw new Error('Failed to fetch suggestions from API');
+      }
+
+      const result = await response.json();
+      setSuggestion(result.suggestions);
+
+    } catch (error) {
+      console.error('Error fetching AI suggestions:', error);
+      toast({
+        variant: 'destructive',
+        title: 'AI Error',
+        description: 'Could not fetch saving suggestions.',
+      });
+    } finally {
+        setIsLoading(false);
+    }
   };
 
   return (
@@ -60,7 +95,7 @@ export function AiInsightsCard({ expenses, budget }: AiInsightsCardProps) {
             <p className="whitespace-pre-wrap font-sans">{suggestion}</p>
           </div>
         )}
-        <Button onClick={getSuggestion} disabled={isLoading} className="w-full">
+        <Button onClick={getSuggestion} disabled={isLoading || expenses.length === 0} className="w-full">
           {isLoading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />

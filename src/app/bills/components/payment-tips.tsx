@@ -26,13 +26,34 @@ export function PaymentTips({ bills }: PaymentTipsProps) {
     setIsLoading(true);
     setTips(null);
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    const mappedBills = bills.map(b => ({
+        name: b.name,
+        amount: b.amount,
+        dueDate: b.dueDate.toISOString().split('T')[0],
+        paymentDate: b.paymentDate?.toISOString().split('T')[0],
+        status: b.status,
+        category: b.category,
+    }))
 
-    const dummyTips = `I noticed your 'Water Bill' was overdue. To avoid late fees, consider setting up automatic payments for recurring bills like utilities. You could also set a calendar reminder a few days before the due date.`;
-    setTips(dummyTips);
+    try {
+        const response = await fetch('/api/ai/bill-tips', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ billHistory: mappedBills }),
+        });
 
-    setIsLoading(false);
+        if (!response.ok) {
+            throw new Error('Failed to fetch tips from API');
+        }
+
+        const result = await response.json();
+        setTips(result.tips);
+    } catch (error) {
+        console.error('Error fetching payment tips:', error);
+        toast({ variant: 'destructive', title: 'AI Error', description: 'Could not fetch payment tips.' });
+    } finally {
+        setIsLoading(false);
+    }
   };
 
   return (

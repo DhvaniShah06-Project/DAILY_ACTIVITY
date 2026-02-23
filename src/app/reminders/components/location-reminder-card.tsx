@@ -11,7 +11,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 export function LocationReminderCard() {
   const [needs, setNeeds] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [reminder, setReminder] = useState<{ text: string; relevant: boolean } | null>(null);
+  const [reminder, setReminder] = useState<{ reminder: string; isRelevant: boolean } | null>(null);
   const { toast } = useToast();
 
   const handleGetReminder = () => {
@@ -27,19 +27,25 @@ export function LocationReminderCard() {
     setIsLoading(true);
     setReminder(null);
 
-    // This function might ask for location permissions, but we'll use a dummy response.
     navigator.geolocation.getCurrentPosition(
       async (position) => {
+        const { latitude, longitude } = position.coords;
         try {
-          // We don't need to call an API, but we'll simulate the delay.
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          const response = await fetch('/api/ai/reminders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userLocation: { latitude, longitude },
+              userNeeds: needs,
+            }),
+          });
           
-          const dummyReminder = {
-            text: `Since you need to '${needs}', remember to stop by a store soon!`,
-            relevant: true, // Assume it's always relevant for the demo
-          };
-
-          setReminder(dummyReminder);
+          if (!response.ok) {
+            throw new Error('Failed to fetch reminder from API');
+          }
+          
+          const result = await response.json();
+          setReminder(result);
         } catch (error) {
           console.error('Failed to get reminder:', error);
           toast({
@@ -52,7 +58,6 @@ export function LocationReminderCard() {
         }
       },
       (error) => {
-        // Handle cases where location is denied by the user.
         console.error('Geolocation error:', error);
         toast({
           variant: 'destructive',
@@ -94,10 +99,10 @@ export function LocationReminderCard() {
           )}
         </Button>
         {reminder && (
-          <Alert variant={reminder.relevant ? 'success' : 'destructive'}>
+          <Alert variant={reminder.isRelevant ? 'success' : 'destructive'}>
             <BellRing className="h-4 w-4" />
             <AlertTitle>Smart Reminder</AlertTitle>
-            <AlertDescription>{reminder.text}</AlertDescription>
+            <AlertDescription>{reminder.reminder}</AlertDescription>
           </Alert>
         )}
       </CardContent>

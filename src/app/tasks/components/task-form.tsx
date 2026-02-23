@@ -73,13 +73,32 @@ export function TaskForm({ onSubmit, selectedDate }: TaskFormProps) {
     setIsSuggesting(true);
     setSuggestions([]);
 
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const dummySuggestions = ['Chicken Curry', 'Tomato Soup', 'Vegetable Stir-fry'];
-    setSuggestions(dummySuggestions);
-    
-    setIsSuggesting(false);
+    try {
+      const response = await fetch('/api/ai/dishes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ingredients: ingredients.split(',').map(i => i.trim()),
+          timeOfDay: 'Dinner', // This could be dynamic
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch suggestions from API');
+      }
+
+      const result = await response.json();
+      setSuggestions(result.dishNames || []);
+      if (!result.dishNames || result.dishNames.length === 0) {
+        toast({ title: "No suggestions", description: "Couldn't find any dishes with those ingredients." });
+      }
+
+    } catch (error) {
+      console.error('Error fetching dish suggestions:', error);
+      toast({ variant: 'destructive', title: 'AI Error', description: 'Could not fetch suggestions.' });
+    } finally {
+      setIsSuggesting(false);
+    }
   };
 
   const handleFormSubmit = (data: TaskFormValues) => {

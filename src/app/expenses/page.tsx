@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useMemo } from 'react';
 import type { Expense } from '@/lib/types';
+import { expenses as dummyExpenses } from '@/lib/data';
 import { PlusCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/empty-state';
@@ -17,7 +18,7 @@ import {
 import { ExpenseForm } from './components/expense-form';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore } from '@/firebase';
-import { collection, addDoc, serverTimestamp, onSnapshot, query } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, onSnapshot, query, writeBatch, doc } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
@@ -49,16 +50,31 @@ export default function ExpensesPage() {
     }
     setIsLoading(true);
     const expensesQuery = query(collection(db, 'users', user.uid, 'expenses'));
-    const unsubscribe = onSnapshot(expensesQuery, (snapshot) => {
-      const fetchedExpenses = snapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          ...data,
-          date: data.date?.toDate ? data.date.toDate() : new Date(),
-        } as Expense;
-      });
-      setExpenses(fetchedExpenses.sort((a, b) => b.date.getTime() - a.date.getTime()));
+    const unsubscribe = onSnapshot(expensesQuery, async (snapshot) => {
+      if (snapshot.empty) {
+        // One-time seed
+        try {
+          const batch = writeBatch(db);
+          const expensesCol = collection(db, 'users', user.uid, 'expenses');
+          dummyExpenses.forEach((expense) => {
+            const docRef = doc(expensesCol);
+            batch.set(docRef, { ...expense, id: undefined, createdAt: serverTimestamp() });
+          });
+          await batch.commit();
+        } catch (e) {
+          console.error("Error seeding expenses: ", e);
+        }
+      } else {
+        const fetchedExpenses = snapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            date: data.date?.toDate ? data.date.toDate() : new Date(),
+          } as Expense;
+        });
+        setExpenses(fetchedExpenses.sort((a, b) => b.date.getTime() - a.date.getTime()));
+      }
       setIsLoading(false);
     }, (error) => {
       console.error("Error fetching expenses: ", error);
