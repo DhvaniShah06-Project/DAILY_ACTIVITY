@@ -8,27 +8,36 @@ import {
 } from 'firebase/firestore';
 import type { Bill, Expense, Task } from '@/lib/types';
 
+/**
+ * A robust utility to remove any properties from an object that have an `undefined` value.
+ * Firestore throws an error for `undefined` field values.
+ * This is the definitive way to prevent data submission errors.
+ * @param obj The object to clean.
+ * @returns A new object with `undefined` properties removed.
+ */
+function cleanUndefined(obj: any) {
+  const newObj: { [key: string]: any } = {};
+  for (const key in obj) {
+    if (obj[key] !== undefined) {
+      newObj[key] = obj[key];
+    }
+  }
+  return newObj;
+}
+
 // Tasks
 export const addTask = async (
   db: Firestore,
   userId: string,
-  task: Partial<Omit<Task, 'id' | 'isCompleted'>>
+  task: Omit<Task, 'id' | 'isCompleted'>
 ) => {
-  // Manually construct the data object to ensure no undefined fields are sent.
-  const dataToAdd: { [key: string]: any } = {
-    title: task.title,
-    category: task.category,
-    dueDate: task.dueDate,
+  const dataToAdd = {
+    ...task,
     isCompleted: false,
     createdAt: serverTimestamp(),
   };
-
-  // Only include 'ingredients' if it is a valid, non-empty array.
-  if (Array.isArray(task.ingredients) && task.ingredients.length > 0 && task.ingredients.some(ing => ing.trim() !== '')) {
-    dataToAdd.ingredients = task.ingredients;
-  }
-
-  await addDoc(collection(db, 'users', userId, 'tasks'), dataToAdd);
+  // The 'cleanUndefined' function will remove 'ingredients' if it is undefined.
+  await addDoc(collection(db, 'users', userId, 'tasks'), cleanUndefined(dataToAdd));
 };
 
 export const updateTaskCompletion = async (
@@ -47,17 +56,14 @@ export const addBill = async (
   userId: string,
   bill: Omit<Bill, 'id' | 'status'>
 ) => {
-  // Manually construct the data object to ensure no undefined fields are sent.
-  const dataToAdd: { [key: string]: any } = {
-    name: bill.name,
-    amount: bill.amount,
-    category: bill.category,
-    dueDate: bill.dueDate,
+  const dataToAdd = {
+    ...bill,
     status: 'unpaid',
     createdAt: serverTimestamp(),
   };
 
-  await addDoc(collection(db, 'users', userId, 'bills'), dataToAdd);
+  // The 'cleanUndefined' function will remove 'paymentMethod' if it is undefined.
+  await addDoc(collection(db, 'users', userId, 'bills'), cleanUndefined(dataToAdd));
 };
 
 export const updateBillStatus = async (
@@ -84,18 +90,11 @@ export const addExpense = async (
   userId: string,
   expense: Omit<Expense, 'id'>
 ) => {
-  // Manually construct the data object to ensure no undefined fields are sent.
-  const dataToAdd: { [key: string]: any } = {
-    amount: expense.amount,
-    category: expense.category,
-    date: expense.date,
+  const dataToAdd = {
+    ...expense,
     createdAt: serverTimestamp(),
   };
-
-  // Only include 'notes' if it is a valid, non-empty string.
-  if (expense.notes && typeof expense.notes === 'string' && expense.notes.trim() !== '') {
-    dataToAdd.notes = expense.notes;
-  }
-
-  await addDoc(collection(db, 'users', userId, 'expenses'), dataToAdd);
+  
+  // The 'cleanUndefined' function will remove 'notes' if it is undefined.
+  await addDoc(collection(db, 'users', userId, 'expenses'), cleanUndefined(dataToAdd));
 };
