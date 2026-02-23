@@ -200,7 +200,7 @@ export function TaskForm({ onSubmit, selectedDate }: TaskFormProps) {
                     ) : (
                       <Sparkles className="h-4 w-4" />
                     )}
-                    <span className="ml-2">Suggest Dish</span>
+                    <span>Suggest Dish</span>
                   </Button>
                 </div>
                 <FormMessage />
@@ -225,7 +225,7 @@ export function TaskForm({ onSubmit, selectedDate }: TaskFormProps) {
                       )}
                     >
                       {field.value ? (
-                        format(field.value, 'PPP')
+                        format(field.value, 'MMMM do, yyyy')
                       ) : (
                         <span>Pick a date</span>
                       )}

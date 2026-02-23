@@ -124,7 +124,7 @@ export function BillForm({ onSubmit }: BillFormProps) {
                       )}
                     >
                       {field.value ? (
-                        format(field.value, 'PPP')
+                        format(field.value, 'MMMM do, yyyy')
                       ) : (
                         <span>Pick a date</span>
                       )}
