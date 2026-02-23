@@ -21,6 +21,7 @@ import { useCollection, WithId } from '@/firebase/firestore/use-collection';
 import { collection, query, Timestamp, addDoc, serverTimestamp } from 'firebase/firestore';
 import { updateTaskCompletion } from '@/lib/firebase/db';
 import { useToast } from '@/hooks/use-toast';
+import { removeUndefinedFields } from '@/lib/data-utils';
 
 export default function TasksPage() {
   const { user } = useUser();
@@ -62,20 +63,16 @@ export default function TasksPage() {
       return;
     }
     try {
-      // Manually construct the data to ensure no 'undefined' values are sent.
       const dataToAdd: any = {
         title: taskData.title,
         category: taskData.category,
         dueDate: taskData.dueDate,
         isCompleted: false,
         createdAt: serverTimestamp(),
+        ingredients: taskData.ingredients,
       };
-
-      if (taskData.ingredients && taskData.ingredients.length > 0) {
-        dataToAdd.ingredients = taskData.ingredients;
-      }
       
-      await addDoc(collection(firestore, 'users', user.uid, 'tasks'), dataToAdd);
+      await addDoc(collection(firestore, 'users', user.uid, 'tasks'), removeUndefinedFields(dataToAdd));
       
       toast({ title: 'Success', description: 'Task added successfully.' });
       (document.activeElement as HTMLElement)?.blur();

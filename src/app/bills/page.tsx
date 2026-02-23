@@ -20,6 +20,7 @@ import { useCollection } from '@/firebase/firestore/use-collection';
 import { collection, Timestamp, addDoc, serverTimestamp } from 'firebase/firestore';
 import { updateBillStatus } from '@/lib/firebase/db';
 import { useToast } from '@/hooks/use-toast';
+import { removeUndefinedFields } from '@/lib/data-utils';
 
 export default function BillsPage() {
   const { user } = useUser();
@@ -52,7 +53,6 @@ export default function BillsPage() {
       return;
     }
     try {
-      // Manually construct the data to ensure no 'undefined' values are sent.
       const dataToAdd: any = {
         name: billData.name,
         amount: billData.amount,
@@ -60,13 +60,10 @@ export default function BillsPage() {
         dueDate: billData.dueDate,
         status: 'unpaid',
         createdAt: serverTimestamp(),
+        paymentMethod: billData.paymentMethod,
       };
       
-      if (billData.paymentMethod) {
-        dataToAdd.paymentMethod = billData.paymentMethod;
-      }
-      
-      await addDoc(collection(firestore, 'users', user.uid, 'bills'), dataToAdd);
+      await addDoc(collection(firestore, 'users', user.uid, 'bills'), removeUndefinedFields(dataToAdd));
 
       toast({ title: 'Success', description: 'Bill added successfully.' });
       (document.activeElement as HTMLElement)?.blur();

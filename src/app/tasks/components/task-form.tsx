@@ -102,21 +102,17 @@ export function TaskForm({ onSubmit, selectedDate }: TaskFormProps) {
   };
 
   const handleFormSubmit = (data: TaskFormValues) => {
-    // This is the robust way to create the data object.
-    // We start with the required fields.
-    const taskData: Omit<Task, 'id' | 'isCompleted'> & { ingredients?: string[] } = {
+    const taskData: Omit<Task, 'id' | 'isCompleted'> = {
       title: data.title,
       category: data.category,
       dueDate: data.dueDate,
     };
 
-    // Only if ingredients exist and have content, we add them to the object.
-    // This prevents sending `ingredients: undefined` to Firestore.
     if (data.ingredients && data.ingredients.trim()) {
       taskData.ingredients = data.ingredients.split(',').map((i) => i.trim());
     }
 
-    onSubmit(taskData as Omit<Task, 'id' | 'isCompleted'>);
+    onSubmit(taskData);
     form.reset();
   };
 
