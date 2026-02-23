@@ -10,7 +10,6 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
 import type { Expense } from '@/lib/types';
 
 type BudgetData = {
@@ -18,6 +17,7 @@ type BudgetData = {
   categories: {
     name: string;
     total: number;
+    spent: number;
   }[];
 };
 
@@ -29,13 +29,12 @@ type AiInsightsCardProps = {
 export function AiInsightsCard({ expenses, budget }: AiInsightsCardProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [suggestion, setSuggestion] = useState<string | null>(null);
-  const { toast } = useToast();
 
   const getSuggestion = async () => {
     setIsLoading(true);
     setSuggestion(null);
 
-    // Simulate API call
+    // Simulate API call with a timeout
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
     const dummySuggestion = `Based on your spending, you're doing great with your 'Transport' budget. However, you've gone slightly over on 'Entertainment'. Consider looking for free events or a movie night at home to save some extra cash for your vacation goal!`;
