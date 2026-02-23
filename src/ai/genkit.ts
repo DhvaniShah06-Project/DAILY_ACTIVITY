@@ -1,15 +1,11 @@
+'use server';
 import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/google-genai';
 
-const geminiApiKey = process.env.GEMINI_API_KEY;
-
-if (!geminiApiKey) {
-  console.warn(
-    'GEMINI_API_KEY environment variable not set. AI features will not work.'
-  );
-}
-
+// By leaving the googleAI() plugin configuration empty, Genkit will automatically
+// look for the GEMINI_API_KEY in the environment variables. This is the
+// robust and recommended way to handle authentication in deployed environments.
 export const ai = genkit({
-  plugins: [googleAI({apiKey: geminiApiKey})],
+  plugins: [googleAI()],
   model: 'googleai/gemini-2.5-flash',
 });

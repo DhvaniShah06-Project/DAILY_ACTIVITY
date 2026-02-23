@@ -48,17 +48,21 @@ export function ExpenseForm({ onSubmit }: ExpenseFormProps) {
   });
 
   const handleFormSubmit = (data: ExpenseFormValues) => {
-    const expenseData: Omit<Expense, 'id'> = {
+    // This is the robust way to create the data object.
+    // We start with the required fields.
+    const expenseData: Omit<Expense, 'id'> & { notes?: string } = {
       amount: data.amount,
       category: data.category,
       date: data.date,
     };
     
+    // Only if notes exist and have content, we add them to the object.
+    // This prevents sending `notes: undefined` to Firestore.
     if (data.notes && data.notes.trim()) {
       expenseData.notes = data.notes;
     }
     
-    onSubmit(expenseData);
+    onSubmit(expenseData as Omit<Expense, 'id'>);
     form.reset();
   };
 
