@@ -8,34 +8,26 @@ import {
 } from 'firebase/firestore';
 import type { Bill, Expense, Task } from '@/lib/types';
 
-// This utility function removes any keys with `undefined` values from an object.
-// Firestore throws an error if you try to save a document with an `undefined` field.
-const removeUndefinedFields = (obj: { [key: string]: any }) => {
-  const newObj: { [key: string]: any } = {};
-  for (const key in obj) {
-    if (obj[key] !== undefined) {
-      newObj[key] = obj[key];
-    }
-  }
-  return newObj;
-};
-
 // Tasks
 export const addTask = async (
   db: Firestore,
   userId: string,
   task: Omit<Task, 'id' | 'isCompleted'>
 ) => {
-  const dataToAdd = {
-    ...task,
+  const dataToAdd: { [key: string]: any } = {
+    title: task.title,
+    category: task.category,
+    dueDate: task.dueDate,
     isCompleted: false,
     createdAt: serverTimestamp(),
   };
 
-  // Clean the object before sending it to Firestore.
-  const cleanedData = removeUndefinedFields(dataToAdd);
+  // Only add 'ingredients' if it's provided as a non-empty array.
+  if (task.ingredients && Array.isArray(task.ingredients) && task.ingredients.length > 0) {
+    dataToAdd.ingredients = task.ingredients;
+  }
 
-  await addDoc(collection(db, 'users', userId, 'tasks'), cleanedData);
+  await addDoc(collection(db, 'users', userId, 'tasks'), dataToAdd);
 };
 
 export const updateTaskCompletion = async (
@@ -54,14 +46,16 @@ export const addBill = async (
   userId: string,
   bill: Omit<Bill, 'id' | 'status'>
 ) => {
-  const dataToAdd = {
-    ...bill,
+  const dataToAdd: { [key: string]: any } = {
+    name: bill.name,
+    amount: bill.amount,
+    category: bill.category,
+    dueDate: bill.dueDate,
     status: 'unpaid',
     createdAt: serverTimestamp(),
   };
-  
-  const cleanedData = removeUndefinedFields(dataToAdd);
-  await addDoc(collection(db, 'users', userId, 'bills'), cleanedData);
+
+  await addDoc(collection(db, 'users', userId, 'bills'), dataToAdd);
 };
 
 export const updateBillStatus = async (
@@ -88,11 +82,17 @@ export const addExpense = async (
   userId: string,
   expense: Omit<Expense, 'id'>
 ) => {
-  const dataToAdd = {
-    ...expense,
+  const dataToAdd: { [key: string]: any } = {
+    amount: expense.amount,
+    category: expense.category,
+    date: expense.date,
     createdAt: serverTimestamp(),
   };
 
-  const cleanedData = removeUndefinedFields(dataToAdd);
-  await addDoc(collection(db, 'users', userId, 'expenses'), cleanedData);
+  // Only add 'notes' if it's a non-empty string.
+  if (expense.notes) {
+    dataToAdd.notes = expense.notes;
+  }
+
+  await addDoc(collection(db, 'users', userId, 'expenses'), dataToAdd);
 };
