@@ -4,18 +4,21 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Bell, Globe, Settings } from 'lucide-react';
+import { Bell, Globe, Settings, LogOut } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useUser } from '@/firebase';
 
 export function AppHeader() {
   const pathname = usePathname();
+  const { user, signOut } = useUser();
 
   const getInitials = (email?: string | null) => {
     if (!email) return 'U';
@@ -42,7 +45,7 @@ export function AppHeader() {
         return page.charAt(0).toUpperCase() + page.slice(1);
     }
   };
-  
+
   const pageTitle = getPageTitle(pathname);
 
   return (
@@ -84,18 +87,23 @@ export function AppHeader() {
           <DropdownMenuTrigger asChild>
             <Avatar className="h-9 w-9 cursor-pointer">
               <AvatarImage
-                src={"https://picsum.photos/seed/user-avatar/100/100"}
+                src={user?.photoURL || ''}
                 alt="User avatar"
                 data-ai-hint="person portrait"
               />
-              <AvatarFallback>U</AvatarFallback>
+              <AvatarFallback>{getInitials(user?.email)}</AvatarFallback>
             </Avatar>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>
-                <p className="font-medium">My Account</p>
-                <p className="text-xs text-muted-foreground">demo@user.com</p>
+              <p className="font-medium">My Account</p>
+              <p className="text-xs text-muted-foreground">{user?.email}</p>
             </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={signOut}>
+              <LogOut className="mr-2 h-4 w-4" />
+              <span>Log out</span>
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

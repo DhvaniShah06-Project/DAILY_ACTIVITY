@@ -16,6 +16,7 @@ import { BottomNav } from '@/components/layout/bottom-nav';
 import { OfflineIndicator } from '@/components/layout/offline-indicator';
 import { Logo } from '../logo';
 import { Fab } from './fab';
+import { AuthGuard } from '../auth/auth-guard';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -27,29 +28,31 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       </div>
     );
   }
-  
+
   return (
-    <SidebarProvider>
-      <Sidebar>
-        <SidebarHeader className="p-4">
-          <Link href="/" className="flex items-center gap-2">
-            <Logo className="text-primary" />
-            <h1 className="font-headline text-2xl font-bold text-primary group-data-[collapsible=icon]:hidden">
-              GharSathi
-            </h1>
-          </Link>
-        </SidebarHeader>
-        <SidebarContent>
-          <SidebarNav />
-        </SidebarContent>
-      </Sidebar>
-      <SidebarInset>
-        <AppHeader />
-        <main className="p-4 sm:p-6 lg:p-8">{children}</main>
-      </SidebarInset>
-      <BottomNav />
-      <Fab />
-      <OfflineIndicator />
-    </SidebarProvider>
+    <AuthGuard>
+      <SidebarProvider>
+        <Sidebar>
+          <SidebarHeader className="p-4">
+            <Link href="/" className="flex items-center gap-2">
+              <Logo className="text-primary" />
+              <h1 className="font-headline text-2xl font-bold text-primary group-data-[collapsible=icon]:hidden">
+                GharSathi
+              </h1>
+            </Link>
+          </SidebarHeader>
+          <SidebarContent>
+            <SidebarNav />
+          </SidebarContent>
+        </Sidebar>
+        <SidebarInset>
+          <AppHeader />
+          <main className="p-4 sm:p-6 lg:p-8">{children}</main>
+        </SidebarInset>
+        <BottomNav />
+        <Fab />
+        <OfflineIndicator />
+      </SidebarProvider>
+    </AuthGuard>
   );
 }

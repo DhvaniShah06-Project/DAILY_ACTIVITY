@@ -1,8 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import type { Bill } from '@/lib/types';
-import { bills as mockBills } from '@/lib/data';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/empty-state';
 import { BillList } from './components/bill-list';
@@ -17,11 +16,48 @@ import {
 } from '@/components/ui/dialog';
 import { BillForm } from './components/bill-form';
 import { useToast } from '@/hooks/use-toast';
+import { useUser, useFirestore } from '@/firebase';
+import { collection, addDoc, doc, updateDoc, serverTimestamp, onSnapshot, query, where, Timestamp } from 'firebase/firestore';
+import { cleanData } from '@/lib/data-cleaner';
+
 
 export default function BillsPage() {
   const { toast } = useToast();
-  const [bills, setBills] = useState<Bill[]>(mockBills);
+  const { user } = useUser();
+  const db = useFirestore();
+  const [bills, setBills] = useState<Bill[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  useEffect(() => {
+    if (!user) {
+      setBills([]);
+      setIsLoading(false);
+      return;
+    }
+    setIsLoading(true);
+    const billsQuery = query(collection(db, 'users', user.uid, 'bills'));
+    const unsubscribe = onSnapshot(billsQuery, (snapshot) => {
+      const fetchedBills = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          dueDate: data.dueDate?.toDate ? data.dueDate.toDate() : new Date(),
+          paymentDate: data.paymentDate?.toDate ? data.paymentDate.toDate() : undefined,
+        } as Bill;
+      });
+      setBills(fetchedBills);
+      setIsLoading(false);
+    }, (error) => {
+      console.error("Error fetching bills: ", error);
+      toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch bills.' });
+      setIsLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [user, db, toast]);
+
 
   useEffect(() => {
     if (window.location.hash === '#add') {
@@ -29,33 +65,46 @@ export default function BillsPage() {
     }
   }, []);
 
-  const handleAddBill = (billData: Omit<Bill, 'id' | 'status'>) => {
-    const newBill: Bill = {
-      ...billData,
-      id: Date.now().toString(),
-      status: 'unpaid',
-    };
-    if (billData.paymentMethod) {
-      newBill.paymentMethod = billData.paymentMethod;
+  const handleAddBill = async (billData: Omit<Bill, 'id' | 'status'>) => {
+    if (!user) {
+      toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in.' });
+      return;
     }
-    setBills((prevBills) => [...prevBills, newBill]);
-    toast({ title: 'Success', description: 'Bill added successfully.' });
-    (document.activeElement as HTMLElement)?.blur();
-    setIsDialogOpen(false);
+
+    const dataToSave = {
+      ...billData,
+      status: 'unpaid',
+      createdAt: serverTimestamp(),
+    };
+
+    try {
+      const cleanedData = cleanData(dataToSave);
+      await addDoc(collection(db, 'users', user.uid, 'bills'), cleanedData);
+      toast({ title: 'Success', description: 'Bill added successfully.' });
+      setIsDialogOpen(false);
+    } catch(error) {
+      console.error("Error adding bill:", error);
+      toast({ variant: 'destructive', title: 'Error', description: 'Failed to add bill.' });
+    }
   };
-  
-  const handleUpdateBillStatus = (billId: string, status: Bill['status']) => {
-    setBills((prevBills) =>
-      prevBills.map((bill) =>
-        bill.id === billId
-          ? {
-              ...bill,
-              status,
-              paymentDate: status === 'paid' ? new Date() : undefined,
-            }
-          : bill
-      )
-    );
+
+  const handleUpdateBillStatus = async (billId: string, status: Bill['status']) => {
+    if (!user) return;
+    const billRef = doc(db, 'users', user.uid, 'bills', billId);
+    
+    const dataToUpdate: { status: Bill['status'], paymentDate?: Timestamp | null } = { status };
+    if (status === 'paid') {
+      dataToUpdate.paymentDate = Timestamp.now();
+    } else {
+      dataToUpdate.paymentDate = null;
+    }
+
+    try {
+      await updateDoc(billRef, cleanData(dataToUpdate));
+    } catch(error) {
+       console.error("Error updating bill status:", error);
+      toast({ variant: 'destructive', title: 'Error', description: 'Failed to update bill status.' });
+    }
   };
 
   return (
@@ -68,28 +117,32 @@ export default function BillsPage() {
           </p>
         </div>
         <div className="flex gap-2">
-            <PaymentTips bills={bills} />
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <PaymentTips bills={bills} />
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-                <Button size="lg">
+              <Button size="lg">
                 <PlusCircle className="mr-2 h-5 w-5" />
                 Add Bill
-                </Button>
+              </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                    <DialogTitle className="font-headline">Add a new bill</DialogTitle>
-                    <DialogDescription>
-                        Enter the details for a new bill to track.
-                    </DialogDescription>
-                </DialogHeader>
-                <BillForm onSubmit={handleAddBill} />
+              <DialogHeader>
+                <DialogTitle className="font-headline">Add a new bill</DialogTitle>
+                <DialogDescription>
+                  Enter the details for a new bill to track.
+                </DialogDescription>
+              </DialogHeader>
+              <BillForm onSubmit={handleAddBill} />
             </DialogContent>
-            </Dialog>
+          </Dialog>
         </div>
       </div>
 
-      {bills.length > 0 ? (
+      {isLoading ? (
+        <div className="flex h-64 items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : bills.length > 0 ? (
         <BillList bills={bills} onUpdateStatus={handleUpdateBillStatus} />
       ) : (
         <EmptyState
@@ -101,18 +154,18 @@ export default function BillsPage() {
         >
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-                <Button>
+              <Button>
                 <PlusCircle className="mr-2 h-4 w-4" /> Add Bill
-                </Button>
+              </Button>
             </DialogTrigger>
-             <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                    <DialogTitle className="font-headline">Add a new bill</DialogTitle>
-                     <DialogDescription>
-                        Enter the details for a new bill to track.
-                    </DialogDescription>
-                </DialogHeader>
-                <BillForm onSubmit={handleAddBill} />
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle className="font-headline">Add a new bill</DialogTitle>
+                <DialogDescription>
+                  Enter the details for a new bill to track.
+                </DialogDescription>
+              </DialogHeader>
+              <BillForm onSubmit={handleAddBill} />
             </DialogContent>
           </Dialog>
         </EmptyState>

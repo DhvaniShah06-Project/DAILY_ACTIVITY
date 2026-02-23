@@ -1,8 +1,7 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import type { Task } from '@/lib/types';
-import { tasks as mockTasks } from '@/lib/data';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -18,12 +17,48 @@ import { EmptyState } from '@/components/empty-state';
 import { DateSelector } from './components/date-selector';
 import { isSameDay } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
+import { useUser, useFirestore } from '@/firebase';
+import { collection, addDoc, doc, updateDoc, serverTimestamp, onSnapshot, query } from 'firebase/firestore';
+import { cleanData } from '@/lib/data-cleaner';
+
 
 export default function TasksPage() {
   const { toast } = useToast();
-  const [tasks, setTasks] = useState<Task[]>(mockTasks);
+  const { user } = useUser();
+  const db = useFirestore();
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+
+   useEffect(() => {
+    if (!user) {
+      setTasks([]);
+      setIsLoading(false);
+      return;
+    }
+    setIsLoading(true);
+    const tasksQuery = query(collection(db, 'users', user.uid, 'tasks'));
+    const unsubscribe = onSnapshot(tasksQuery, (snapshot) => {
+      const fetchedTasks = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          dueDate: data.dueDate?.toDate ? data.dueDate.toDate() : new Date(),
+        } as Task;
+      });
+      setTasks(fetchedTasks);
+      setIsLoading(false);
+    }, (error) => {
+      console.error("Error fetching tasks: ", error);
+      toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch tasks.' });
+      setIsLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [user, db, toast]);
+
 
   useEffect(() => {
     if (window.location.hash === '#add') {
@@ -31,24 +66,52 @@ export default function TasksPage() {
     }
   }, []);
 
-  const handleAddTask = (taskData: Omit<Task, 'id' | 'isCompleted'>) => {
-    const newTask = {
+  const handleAddTask = async (taskData: Omit<Task, 'id' | 'isCompleted'>) => {
+    if (!user) {
+      toast({
+        variant: 'destructive',
+        title: 'Authentication Error',
+        description: 'You must be logged in to add a task.',
+      });
+      return;
+    }
+    const dataToSave = {
       ...taskData,
-      id: Date.now().toString(),
+      createdAt: serverTimestamp(),
       isCompleted: false,
     };
-    setTasks((prevTasks) => [...prevTasks, newTask]);
-    toast({ title: 'Success', description: 'Task added successfully.' });
-    (document.activeElement as HTMLElement)?.blur();
-    setIsDialogOpen(false);
+    try {
+      const cleanedData = cleanData(dataToSave);
+      await addDoc(collection(db, 'users', user.uid, 'tasks'), cleanedData);
+
+      toast({ title: 'Success', description: 'Task added successfully.' });
+      setIsDialogOpen(false);
+    } catch (error) {
+      console.error('Error adding task: ', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'There was a problem adding your task.',
+      });
+    }
   };
 
-  const toggleTaskCompletion = (taskId: string) => {
-    setTasks((prevTasks) =>
-      prevTasks.map((task) =>
-        task.id === taskId ? { ...task, isCompleted: !task.isCompleted } : task
-      )
-    );
+  const toggleTaskCompletion = async (taskId: string) => {
+    if (!user) return;
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task) return;
+
+    const taskRef = doc(db, 'users', user.uid, 'tasks', taskId);
+    try {
+      await updateDoc(taskRef, { isCompleted: !task.isCompleted });
+    } catch (error) {
+      console.error('Error updating task status: ', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Could not update task status.',
+      });
+    }
   };
 
   const tasksForSelectedDate = tasks.filter((task) =>
@@ -91,8 +154,12 @@ export default function TasksPage() {
         selectedDate={selectedDate}
         onDateChange={setSelectedDate}
       />
-
-      {tasksForSelectedDate.length > 0 ? (
+      
+      {isLoading ? (
+         <div className="flex h-64 items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+         </div>
+      ) : tasksForSelectedDate.length > 0 ? (
         <TaskList
           tasks={tasksForSelectedDate}
           onToggleCompletion={toggleTaskCompletion}
@@ -116,7 +183,7 @@ export default function TasksPage() {
                 <DialogTitle className="font-headline">
                   Add a new task
                 </DialogTitle>
-                 <DialogDescription>
+                <DialogDescription>
                   Fill in the details below to add a new task to your list.
                 </DialogDescription>
               </DialogHeader>

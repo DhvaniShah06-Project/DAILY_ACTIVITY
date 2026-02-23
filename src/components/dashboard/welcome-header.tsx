@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useUser } from '@/firebase';
 
 export function WelcomeHeader() {
+  const { user } = useUser();
   const [greeting, setGreeting] = useState('');
-  // A real app would get the name from the user's profile.
-  const name = 'Dhvani';
+  const name = user?.displayName || user?.email?.split('@')[0] || 'User';
 
   useEffect(() => {
     const getGreeting = () => {
