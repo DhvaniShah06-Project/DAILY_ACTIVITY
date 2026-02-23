@@ -18,6 +18,8 @@ import { ExpenseForm } from './components/expense-form';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore } from '@/firebase';
 import { collection, addDoc, serverTimestamp, onSnapshot, query } from 'firebase/firestore';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 export default function ExpensesPage() {
   const { toast } = useToast();
@@ -74,7 +76,7 @@ export default function ExpensesPage() {
     }
   }, []);
 
-  const handleLogExpense = async (expenseData: Omit<Expense, 'id'>) => {
+  const handleLogExpense = (expenseData: Omit<Expense, 'id'>) => {
     if (!user) {
       toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in.' });
       return;
@@ -91,14 +93,19 @@ export default function ExpensesPage() {
       dataToSave.notes = expenseData.notes;
     }
 
-    try {
-      await addDoc(collection(db, 'users', user.uid, 'expenses'), dataToSave);
-      toast({ title: 'Success', description: 'Expense logged.' });
-      setIsDialogOpen(false);
-    } catch (error) {
-      console.error("Error logging expense:", error);
-      toast({ variant: 'destructive', title: 'Error', description: 'Failed to log expense.' });
-    }
+    const collectionRef = collection(db, 'users', user.uid, 'expenses');
+    addDoc(collectionRef, dataToSave)
+      .catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: collectionRef.path,
+          operation: 'create',
+          requestResourceData: dataToSave,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
+      
+    toast({ title: 'Success', description: 'Expense logged.' });
+    setIsDialogOpen(false);
   };
 
   return (

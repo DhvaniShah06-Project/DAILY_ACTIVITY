@@ -19,6 +19,8 @@ import { isSameDay } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore } from '@/firebase';
 import { collection, addDoc, doc, updateDoc, serverTimestamp, onSnapshot, query } from 'firebase/firestore';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 export default function TasksPage() {
   const { toast } = useToast();
@@ -64,7 +66,7 @@ export default function TasksPage() {
     }
   }, []);
 
-  const handleAddTask = async (taskData: Omit<Task, 'id' | 'isCompleted'>) => {
+  const handleAddTask = (taskData: Omit<Task, 'id' | 'isCompleted'>) => {
     if (!user) {
       toast({
         variant: 'destructive',
@@ -86,37 +88,38 @@ export default function TasksPage() {
       dataToSave.ingredients = taskData.ingredients;
     }
 
-    try {
-      await addDoc(collection(db, 'users', user.uid, 'tasks'), dataToSave);
-
-      toast({ title: 'Success', description: 'Task added successfully.' });
-      setIsDialogOpen(false);
-    } catch (error) {
-      console.error('Error adding task: ', error);
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'There was a problem adding your task.',
+    const collectionRef = collection(db, 'users', user.uid, 'tasks');
+    addDoc(collectionRef, dataToSave)
+      .catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: collectionRef.path,
+          operation: 'create',
+          requestResourceData: dataToSave,
+        });
+        errorEmitter.emit('permission-error', permissionError);
       });
-    }
+      
+    toast({ title: 'Success', description: 'Task added successfully.' });
+    setIsDialogOpen(false);
   };
 
-  const toggleTaskCompletion = async (taskId: string) => {
+  const toggleTaskCompletion = (taskId: string) => {
     if (!user) return;
     const task = tasks.find((t) => t.id === taskId);
     if (!task) return;
 
     const taskRef = doc(db, 'users', user.uid, 'tasks', taskId);
-    try {
-      await updateDoc(taskRef, { isCompleted: !task.isCompleted });
-    } catch (error) {
-      console.error('Error updating task status: ', error);
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Could not update task status.',
+    const updatedData = { isCompleted: !task.isCompleted };
+
+    updateDoc(taskRef, updatedData)
+      .catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: taskRef.path,
+          operation: 'update',
+          requestResourceData: updatedData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
       });
-    }
   };
 
   const tasksForSelectedDate = useMemo(() => tasks.filter((task) =>

@@ -18,6 +18,8 @@ import { BillForm } from './components/bill-form';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore } from '@/firebase';
 import { collection, addDoc, doc, updateDoc, serverTimestamp, onSnapshot, query, where } from 'firebase/firestore';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 
 export default function BillsPage() {
@@ -64,7 +66,7 @@ export default function BillsPage() {
     }
   }, []);
 
-  const handleAddBill = async (billData: Omit<Bill, 'id' | 'status'>) => {
+  const handleAddBill = (billData: Omit<Bill, 'id' | 'status'>) => {
     if (!user) {
       toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in.' });
       return;
@@ -83,17 +85,22 @@ export default function BillsPage() {
         dataToSave.paymentMethod = billData.paymentMethod;
     }
 
-    try {
-      await addDoc(collection(db, 'users', user.uid, 'bills'), dataToSave);
-      toast({ title: 'Success', description: 'Bill added successfully.' });
-      setIsDialogOpen(false);
-    } catch(error) {
-      console.error("Error adding bill:", error);
-      toast({ variant: 'destructive', title: 'Error', description: 'Failed to add bill.' });
-    }
+    const collectionRef = collection(db, 'users', user.uid, 'bills');
+    addDoc(collectionRef, dataToSave)
+      .catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: collectionRef.path,
+          operation: 'create',
+          requestResourceData: dataToSave,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
+      
+    toast({ title: 'Success', description: 'Bill added successfully.' });
+    setIsDialogOpen(false);
   };
 
-  const handleUpdateBillStatus = async (billId: string, status: Bill['status']) => {
+  const handleUpdateBillStatus = (billId: string, status: Bill['status']) => {
     if (!user) return;
     const billRef = doc(db, 'users', user.uid, 'bills', billId);
     
@@ -104,12 +111,15 @@ export default function BillsPage() {
       dataToUpdate.paymentDate = null;
     }
 
-    try {
-      await updateDoc(billRef, dataToUpdate);
-    } catch(error) {
-       console.error("Error updating bill status:", error);
-      toast({ variant: 'destructive', title: 'Error', description: 'Failed to update bill status.' });
-    }
+    updateDoc(billRef, dataToUpdate)
+      .catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: billRef.path,
+          operation: 'update',
+          requestResourceData: dataToUpdate,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
   };
 
   return (
