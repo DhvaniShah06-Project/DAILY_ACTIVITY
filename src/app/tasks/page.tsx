@@ -18,8 +18,8 @@ import { DateSelector } from './components/date-selector';
 import { isSameDay } from 'date-fns';
 import { useUser, useFirestore } from '@/firebase';
 import { useCollection, WithId } from '@/firebase/firestore/use-collection';
-import { collection, query, Timestamp } from 'firebase/firestore';
-import { addTask, updateTaskCompletion } from '@/lib/firebase/db';
+import { collection, query, Timestamp, addDoc, serverTimestamp } from 'firebase/firestore';
+import { updateTaskCompletion } from '@/lib/firebase/db';
 import { useToast } from '@/hooks/use-toast';
 
 export default function TasksPage() {
@@ -56,13 +56,27 @@ export default function TasksPage() {
     }
   }, []);
 
-  const handleAddTask = async (newTask: Omit<Task, 'id' | 'isCompleted'>) => {
+  const handleAddTask = async (taskData: Omit<Task, 'id' | 'isCompleted'>) => {
     if (!user) {
       toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to add a task.' });
       return;
     }
     try {
-      await addTask(firestore, user.uid, newTask);
+      // Manually construct the data to ensure no 'undefined' values are sent.
+      const dataToAdd: any = {
+        title: taskData.title,
+        category: taskData.category,
+        dueDate: taskData.dueDate,
+        isCompleted: false,
+        createdAt: serverTimestamp(),
+      };
+
+      if (taskData.ingredients && taskData.ingredients.length > 0) {
+        dataToAdd.ingredients = taskData.ingredients;
+      }
+      
+      await addDoc(collection(firestore, 'users', user.uid, 'tasks'), dataToAdd);
+      
       toast({ title: 'Success', description: 'Task added successfully.' });
       (document.activeElement as HTMLElement)?.blur();
       setIsDialogOpen(false);

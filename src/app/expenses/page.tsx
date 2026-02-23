@@ -18,8 +18,7 @@ import {
 import { ExpenseForm } from './components/expense-form';
 import { useUser, useFirestore } from '@/firebase';
 import { useCollection } from '@/firebase/firestore/use-collection';
-import { collection, Timestamp } from 'firebase/firestore';
-import { addExpense } from '@/lib/firebase/db';
+import { collection, Timestamp, addDoc, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
 export default function ExpensesPage() {
@@ -47,13 +46,26 @@ export default function ExpensesPage() {
     }
   }, []);
 
-  const handleLogExpense = async (newExpense: Omit<Expense, 'id'>) => {
+  const handleLogExpense = async (expenseData: Omit<Expense, 'id'>) => {
     if (!user) {
       toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to log an expense.' });
       return;
     }
     try {
-      await addExpense(firestore, user.uid, newExpense);
+      // Manually construct the data to ensure no 'undefined' values are sent.
+      const dataToAdd: any = {
+        amount: expenseData.amount,
+        category: expenseData.category,
+        date: expenseData.date,
+        createdAt: serverTimestamp(),
+      };
+
+      if (expenseData.notes) {
+        dataToAdd.notes = expenseData.notes;
+      }
+      
+      await addDoc(collection(firestore, 'users', user.uid, 'expenses'), dataToAdd);
+
       toast({ title: 'Success', description: 'Expense logged.' });
       (document.activeElement as HTMLElement)?.blur();
       setIsDialogOpen(false);

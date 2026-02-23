@@ -17,8 +17,8 @@ import {
 import { BillForm } from './components/bill-form';
 import { useUser, useFirestore } from '@/firebase';
 import { useCollection } from '@/firebase/firestore/use-collection';
-import { collection, Timestamp } from 'firebase/firestore';
-import { addBill, updateBillStatus } from '@/lib/firebase/db';
+import { collection, Timestamp, addDoc, serverTimestamp } from 'firebase/firestore';
+import { updateBillStatus } from '@/lib/firebase/db';
 import { useToast } from '@/hooks/use-toast';
 
 export default function BillsPage() {
@@ -46,13 +46,28 @@ export default function BillsPage() {
     }
   }, []);
 
-  const handleAddBill = async (newBill: Omit<Bill, 'id' | 'status'>) => {
+  const handleAddBill = async (billData: Omit<Bill, 'id' | 'status'>) => {
     if (!user) {
       toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to add a bill.' });
       return;
     }
     try {
-      await addBill(firestore, user.uid, newBill);
+      // Manually construct the data to ensure no 'undefined' values are sent.
+      const dataToAdd: any = {
+        name: billData.name,
+        amount: billData.amount,
+        category: billData.category,
+        dueDate: billData.dueDate,
+        status: 'unpaid',
+        createdAt: serverTimestamp(),
+      };
+      
+      if (billData.paymentMethod) {
+        dataToAdd.paymentMethod = billData.paymentMethod;
+      }
+      
+      await addDoc(collection(firestore, 'users', user.uid, 'bills'), dataToAdd);
+
       toast({ title: 'Success', description: 'Bill added successfully.' });
       (document.activeElement as HTMLElement)?.blur();
       setIsDialogOpen(false);
