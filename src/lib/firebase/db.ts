@@ -14,14 +14,19 @@ export const addTask = async (
   userId: string,
   task: Omit<Task, 'id' | 'isCompleted'>
 ) => {
-  const dataToAdd = {
+  // Explicitly build the data object to prevent undefined fields.
+  const dataToAdd: { [key: string]: any } = {
     title: task.title,
     category: task.category,
     dueDate: task.dueDate,
     isCompleted: false,
     createdAt: serverTimestamp(),
-    ...(task.ingredients && task.ingredients.length > 0 && { ingredients: task.ingredients }),
   };
+
+  // Only include ingredients if they are provided.
+  if (task.ingredients && task.ingredients.length > 0) {
+    dataToAdd.ingredients = task.ingredients;
+  }
 
   await addDoc(collection(db, 'users', userId, 'tasks'), dataToAdd);
 };
@@ -42,6 +47,7 @@ export const addBill = async (
   userId: string,
   bill: Omit<Bill, 'id' | 'status'>
 ) => {
+  // Explicitly build the data object to prevent undefined fields.
   const dataToAdd = {
     name: bill.name,
     amount: bill.amount,
@@ -78,13 +84,18 @@ export const addExpense = async (
   userId: string,
   expense: Omit<Expense, 'id'>
 ) => {
-    const dataToAdd = {
-        amount: expense.amount,
-        category: expense.category,
-        date: expense.date,
-        createdAt: serverTimestamp(),
-        ...(expense.notes && { notes: expense.notes }),
-    };
+  // Explicitly build the data object to prevent undefined fields.
+  const dataToAdd: { [key: string]: any } = {
+    amount: expense.amount,
+    category: expense.category,
+    date: expense.date,
+    createdAt: serverTimestamp(),
+  };
+  
+  // Only include notes if they are provided.
+  if (expense.notes) {
+    dataToAdd.notes = expense.notes;
+  }
 
   await addDoc(collection(db, 'users', userId, 'expenses'), dataToAdd);
 };
