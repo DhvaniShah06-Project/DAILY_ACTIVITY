@@ -19,8 +19,6 @@ import { ExpenseForm } from './components/expense-form';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore } from '@/firebase';
 import { collection, addDoc, serverTimestamp, onSnapshot, query, writeBatch, doc } from 'firebase/firestore';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 
 export default function ExpensesPage() {
   const { toast } = useToast();
@@ -119,13 +117,13 @@ export default function ExpensesPage() {
         toast({ title: 'Success', description: 'Expense logged.' });
         setIsDialogOpen(false);
       })
-      .catch(async (serverError) => {
-        const permissionError = new FirestorePermissionError({
-          path: collectionRef.path,
-          operation: 'create',
-          requestResourceData: dataToSave,
+      .catch((error) => {
+        console.error("Error logging expense: ", error);
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: `Could not log expense. ${error instanceof Error ? error.message : ''}`,
         });
-        errorEmitter.emit('permission-error', permissionError);
       });
   };
 

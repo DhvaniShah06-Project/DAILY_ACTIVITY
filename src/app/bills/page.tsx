@@ -19,8 +19,6 @@ import { BillForm } from './components/bill-form';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore } from '@/firebase';
 import { collection, addDoc, doc, updateDoc, serverTimestamp, onSnapshot, query, writeBatch } from 'firebase/firestore';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 
 
 export default function BillsPage() {
@@ -111,13 +109,13 @@ export default function BillsPage() {
         toast({ title: 'Success', description: 'Bill added successfully.' });
         setIsDialogOpen(false);
       })
-      .catch(async (serverError) => {
-        const permissionError = new FirestorePermissionError({
-          path: collectionRef.path,
-          operation: 'create',
-          requestResourceData: dataToSave,
+      .catch((error) => {
+        console.error("Error adding bill: ", error);
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: `Could not add bill. ${error instanceof Error ? error.message : ''}`,
         });
-        errorEmitter.emit('permission-error', permissionError);
       });
   };
 
@@ -133,13 +131,13 @@ export default function BillsPage() {
     }
 
     updateDoc(billRef, dataToUpdate)
-      .catch(async (serverError) => {
-        const permissionError = new FirestorePermissionError({
-          path: billRef.path,
-          operation: 'update',
-          requestResourceData: dataToUpdate,
+      .catch((error) => {
+        console.error("Error updating bill: ", error);
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: `Could not update bill. ${error instanceof Error ? error.message : ''}`,
         });
-        errorEmitter.emit('permission-error', permissionError);
       });
   };
 

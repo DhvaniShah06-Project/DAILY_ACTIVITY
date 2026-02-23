@@ -20,8 +20,6 @@ import { isSameDay } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore } from '@/firebase';
 import { collection, addDoc, doc, updateDoc, serverTimestamp, onSnapshot, query, writeBatch } from 'firebase/firestore';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 
 export default function TasksPage() {
   const { toast } = useToast();
@@ -114,13 +112,13 @@ export default function TasksPage() {
         toast({ title: 'Success', description: 'Task added successfully.' });
         setIsDialogOpen(false);
       })
-      .catch(async (serverError) => {
-        const permissionError = new FirestorePermissionError({
-          path: collectionRef.path,
-          operation: 'create',
-          requestResourceData: dataToSave,
+      .catch((error) => {
+        console.error("Error adding task: ", error);
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: `Could not add task. ${error instanceof Error ? error.message : ''}`,
         });
-        errorEmitter.emit('permission-error', permissionError);
       });
   };
 
@@ -133,13 +131,13 @@ export default function TasksPage() {
     const updatedData = { isCompleted: !task.isCompleted };
 
     updateDoc(taskRef, updatedData)
-      .catch(async (serverError) => {
-        const permissionError = new FirestorePermissionError({
-          path: taskRef.path,
-          operation: 'update',
-          requestResourceData: updatedData,
+      .catch((error) => {
+        console.error("Error updating task: ", error);
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: `Could not update task. ${error instanceof Error ? error.message : ''}`,
         });
-        errorEmitter.emit('permission-error', permissionError);
       });
   };
 
