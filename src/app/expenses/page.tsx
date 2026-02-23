@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import type { Expense } from '@/lib/types';
 import { expenses as dummyExpenses, budget as dummyBudget } from '@/lib/data';
-import { PlusCircle, Loader2 } from 'lucide-react';
+import { PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/empty-state';
 import { ExpenseList } from './components/expense-list';
@@ -17,16 +17,41 @@ import {
 } from '@/components/ui/dialog';
 import { ExpenseForm } from './components/expense-form';
 import { useToast } from '@/hooks/use-toast';
-import { useUser } from '@/firebase';
 
 export default function ExpensesPage() {
   const { toast } = useToast();
-  const { user } = useUser();
-  const [expenses, setExpenses] = useState<Expense[]>(dummyExpenses);
-  const [isLoading, setIsLoading] = useState(false);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
-  // Use dummy budget data and recalculate spent amounts based on local state
+  // Load from localStorage on mount
+  useEffect(() => {
+    try {
+      const storedExpenses = localStorage.getItem('expenses');
+      if (storedExpenses) {
+        const parsedExpenses = JSON.parse(storedExpenses).map((expense: any) => ({
+          ...expense,
+          date: new Date(expense.date),
+        }));
+        setExpenses(parsedExpenses);
+      } else {
+        setExpenses(dummyExpenses);
+      }
+    } catch (error) {
+      console.error("Failed to load expenses from localStorage", error);
+      setExpenses(dummyExpenses);
+    } finally {
+      setIsInitialLoad(false);
+    }
+  }, []);
+
+  // Save to localStorage on change
+  useEffect(() => {
+    if (!isInitialLoad) {
+      localStorage.setItem('expenses', JSON.stringify(expenses));
+    }
+  }, [expenses, isInitialLoad]);
+
   const budget = useMemo(() => {
     const categorySpending = expenses.reduce((acc, expense) => {
       acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
@@ -50,17 +75,12 @@ export default function ExpensesPage() {
   }, []);
 
   const handleLogExpense = (expenseData: Omit<Expense, 'id'>) => {
-    if (!user) {
-      toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in.' });
-      return;
-    }
-    
     const newExpense: Expense = {
       ...expenseData,
       id: Date.now().toString(),
     };
 
-    setExpenses(prevExpenses => [newExpense, ...prevExpenses].sort((a, b) => b.date.getTime() - a.date.getTime()));
+    setExpenses(prevExpenses => [newExpense, ...prevExpenses].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
     toast({ title: 'Success', description: 'Expense logged.' });
     setIsDialogOpen(false);
   };
@@ -93,43 +113,37 @@ export default function ExpensesPage() {
         </Dialog>
       </div>
       
-      {isLoading ? (
-         <div className="flex h-64 items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-         </div>
-      ) : (
-        <>
-          <BudgetOverview budget={budget} expenses={expenses} />
-          {expenses.length > 0 ? (
-            <ExpenseList expenses={expenses} />
-          ) : (
-            <EmptyState
-              title="No expenses logged!"
-              description="Start tracking your spending by logging your first expense."
-              imageSrc="https://picsum.photos/seed/empty-expenses/400/300"
-              imageAlt="Empty expense list"
-              imageHint="no money"
-            >
-              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button>
-                    <PlusCircle className="mr-2 h-4 w-4" /> Log Expense
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px]">
-                  <DialogHeader>
-                    <DialogTitle className="font-headline">Log a new expense</DialogTitle>
-                    <DialogDescription>
-                      Enter the amount, category, and notes for your expense.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <ExpenseForm onSubmit={handleLogExpense} />
-                </DialogContent>
-              </Dialog>
-            </EmptyState>
-          )}
-        </>
-      )}
+      <>
+        <BudgetOverview budget={budget} expenses={expenses} />
+        {expenses.length > 0 ? (
+          <ExpenseList expenses={expenses} />
+        ) : (
+          <EmptyState
+            title="No expenses logged!"
+            description="Start tracking your spending by logging your first expense."
+            imageSrc="https://picsum.photos/seed/empty-expenses/400/300"
+            imageAlt="Empty expense list"
+            imageHint="no money"
+          >
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <PlusCircle className="mr-2 h-4 w-4" /> Log Expense
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle className="font-headline">Log a new expense</DialogTitle>
+                  <DialogDescription>
+                    Enter the amount, category, and notes for your expense.
+                  </DialogDescription>
+                </DialogHeader>
+                <ExpenseForm onSubmit={handleLogExpense} />
+              </DialogContent>
+            </Dialog>
+          </EmptyState>
+        )}
+      </>
     </div>
   );
 }

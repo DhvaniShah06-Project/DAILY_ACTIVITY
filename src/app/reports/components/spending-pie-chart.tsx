@@ -1,5 +1,5 @@
 'use client';
-import { Pie, PieChart, Cell, Tooltip, ResponsiveContainer } from 'recharts';
+import { Pie, PieChart, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import {
   Card,
   CardContent,
@@ -7,12 +7,12 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { budget } from '@/lib/data';
+import { useMemo } from 'react';
+import { type Expense } from '@/lib/types';
 
-const data = budget.categories.map((cat) => ({
-  name: cat.name,
-  value: cat.spent,
-}));
+type SpendingPieChartProps = {
+    expenses: Expense[];
+}
 
 const COLORS = [
   'hsl(var(--chart-1))',
@@ -22,7 +22,33 @@ const COLORS = [
   'hsl(var(--chart-5))',
 ];
 
-export function SpendingPieChart() {
+export function SpendingPieChart({ expenses }: SpendingPieChartProps) {
+  const data = useMemo(() => {
+    if (!expenses) return [];
+    const categoryTotals = expenses.reduce((acc, expense) => {
+        acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
+        return acc;
+    }, {} as Record<string, number>);
+
+    return Object.entries(categoryTotals).map(([name, value]) => ({ name, value }));
+  }, [expenses]);
+  
+  if (data.length === 0) {
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="font-headline">Spending by Category</CardTitle>
+                <CardDescription>
+                A breakdown of your expenses for this month.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="h-[300px] w-full flex items-center justify-center">
+                <p className="text-muted-foreground">No spending data available.</p>
+            </CardContent>
+        </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -43,9 +69,7 @@ export function SpendingPieChart() {
                 outerRadius={80}
                 fill="#8884d8"
                 dataKey="value"
-                label={({ name, percent }) =>
-                  `${name} ${(percent * 100).toFixed(0)}%`
-                }
+                label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
               >
                 {data.map((entry, index) => (
                   <Cell
@@ -58,8 +82,11 @@ export function SpendingPieChart() {
                 contentStyle={{
                   backgroundColor: 'hsl(var(--background))',
                   borderColor: 'hsl(var(--border))',
+                  borderRadius: 'var(--radius)',
                 }}
+                formatter={(value: number) => `$${value.toFixed(2)}`}
               />
+              <Legend formatter={(value) => <span className="text-foreground capitalize">{value}</span>}/>
             </PieChart>
           </ResponsiveContainer>
         </div>

@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import type { Task } from '@/lib/types';
 import { tasks as dummyTasks } from '@/lib/data';
-import { PlusCircle, Loader2 } from 'lucide-react';
+import { PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -18,18 +18,43 @@ import { EmptyState } from '@/components/empty-state';
 import { DateSelector } from './components/date-selector';
 import { isSameDay } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
-import { useUser } from '@/firebase'; // Keep for auth context if needed later
 
 export default function TasksPage() {
   const { toast } = useToast();
-  const { user } = useUser(); // Keep user context, but don't use for DB
-  const [tasks, setTasks] = useState<Task[]>(dummyTasks);
-  const [isLoading, setIsLoading] = useState(false); // Can be removed or kept for simulating latency
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+
+  // Load from localStorage on mount
+  useEffect(() => {
+    try {
+      const storedTasks = localStorage.getItem('tasks');
+      if (storedTasks) {
+        const parsedTasks = JSON.parse(storedTasks).map((task: any) => ({
+          ...task,
+          dueDate: new Date(task.dueDate),
+        }));
+        setTasks(parsedTasks);
+      } else {
+        setTasks(dummyTasks);
+      }
+    } catch (error) {
+      console.error("Failed to load tasks from localStorage", error);
+      setTasks(dummyTasks);
+    } finally {
+      setIsInitialLoad(false);
+    }
+  }, []);
+
+  // Save to localStorage on change
+  useEffect(() => {
+    if (!isInitialLoad) {
+      localStorage.setItem('tasks', JSON.stringify(tasks));
+    }
+  }, [tasks, isInitialLoad]);
 
   useEffect(() => {
-    // If the page was loaded with #add, open the dialog
     if (window.location.hash === '#add') {
       setIsDialogOpen(true);
     }
@@ -38,7 +63,7 @@ export default function TasksPage() {
   const handleAddTask = (taskData: Omit<Task, 'id' | 'isCompleted'>) => {
     const newTask: Task = {
       ...taskData,
-      id: Date.now().toString(), // Simple unique ID for local state
+      id: Date.now().toString(),
       isCompleted: false,
     };
 
@@ -96,11 +121,7 @@ export default function TasksPage() {
         onDateChange={setSelectedDate}
       />
       
-      {isLoading ? (
-         <div className="flex h-64 items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-         </div>
-      ) : tasksForSelectedDate.length > 0 ? (
+      {tasksForSelectedDate.length > 0 ? (
         <TaskList
           tasks={tasksForSelectedDate}
           onToggleCompletion={toggleTaskCompletion}

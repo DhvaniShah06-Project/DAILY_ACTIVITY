@@ -14,9 +14,8 @@ import { SpendingPieChart } from './components/spending-pie-chart';
 import { HistoricalBarChart } from './components/historical-bar-chart';
 import { TaskCompletionReport } from './components/task-completion-report';
 import { useToast } from '@/hooks/use-toast';
-import type { Expense } from '@/lib/types';
-import { useUser } from '@/firebase';
-import { expenses as dummyExpenses } from '@/lib/data';
+import type { Expense, Task } from '@/lib/types';
+import { expenses as dummyExpenses, tasks as dummyTasks } from '@/lib/data';
 
 type SummaryOutput = {
     totalSpending: number;
@@ -27,11 +26,40 @@ type SummaryOutput = {
 
 export default function ReportsPage() {
     const { toast } = useToast();
-    const { user } = useUser();
     const [summary, setSummary] = useState<SummaryOutput | null>(null);
     const [isLoading, setIsLoading] = useState(false);
-    const [expenses, setExpenses] = useState<Expense[]>(dummyExpenses);
-    const [isLoadingExpenses, setIsLoadingExpenses] = useState(false);
+    const [expenses, setExpenses] = useState<Expense[]>([]);
+    const [tasks, setTasks] = useState<Task[]>([]);
+
+    useEffect(() => {
+        try {
+            const storedExpenses = localStorage.getItem('expenses');
+            if (storedExpenses) {
+                const parsedExpenses = JSON.parse(storedExpenses).map((expense: any) => ({
+                    ...expense,
+                    date: new Date(expense.date),
+                }));
+                setExpenses(parsedExpenses);
+            } else {
+                setExpenses(dummyExpenses);
+            }
+
+            const storedTasks = localStorage.getItem('tasks');
+            if (storedTasks) {
+                const parsedTasks = JSON.parse(storedTasks).map((task: any) => ({
+                    ...task,
+                    dueDate: new Date(task.dueDate),
+                }));
+                setTasks(parsedTasks);
+            } else {
+                setTasks(dummyTasks);
+            }
+        } catch (error) {
+            console.error("Failed to load data from localStorage", error);
+            setExpenses(dummyExpenses);
+            setTasks(dummyTasks);
+        }
+    }, []);
 
     const getSummary = async () => {
         if (!expenses || expenses.length === 0) {
@@ -76,7 +104,7 @@ export default function ReportsPage() {
             <CardHeader>
                 <CardTitle className="font-headline">AI Monthly Summary</CardTitle>
                 <CardDescription>An AI-generated summary of your spending patterns and habits.</CardDescription>
-            </CardHeader>
+            </Header>
             <CardContent>
                  {isLoading ? (
                     <div className="flex items-center justify-center min-h-[10rem]">
@@ -95,8 +123,8 @@ export default function ReportsPage() {
                 ) : (
                     <div className="text-center py-8">
                         <p className="text-muted-foreground mb-4">Generate an AI summary of your monthly finances.</p>
-                        <Button onClick={getSummary} disabled={isLoadingExpenses || expenses.length === 0}>
-                            {isLoadingExpenses ? 'Loading expenses...' : 'Generate Summary'}
+                        <Button onClick={getSummary} disabled={expenses.length === 0}>
+                            Generate Summary
                         </Button>
                     </div>
                 )}
@@ -104,8 +132,8 @@ export default function ReportsPage() {
         </Card>
 
       <div className="grid gap-8 md:grid-cols-2">
-        <SpendingPieChart />
-        <TaskCompletionReport />
+        <SpendingPieChart expenses={expenses} />
+        <TaskCompletionReport tasks={tasks} />
       </div>
       <HistoricalBarChart />
     </div>

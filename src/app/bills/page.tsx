@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import type { Bill } from '@/lib/types';
 import { bills as dummyBills } from '@/lib/data';
-import { PlusCircle, Loader2 } from 'lucide-react';
+import { PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/empty-state';
 import { BillList } from './components/bill-list';
@@ -17,15 +17,41 @@ import {
 } from '@/components/ui/dialog';
 import { BillForm } from './components/bill-form';
 import { useToast } from '@/hooks/use-toast';
-import { useUser } from '@/firebase';
-
 
 export default function BillsPage() {
   const { toast } = useToast();
-  const { user } = useUser();
-  const [bills, setBills] = useState<Bill[]>(dummyBills);
-  const [isLoading, setIsLoading] = useState(false);
+  const [bills, setBills] = useState<Bill[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+
+  // Load from localStorage on mount
+  useEffect(() => {
+    try {
+      const storedBills = localStorage.getItem('bills');
+      if (storedBills) {
+        const parsedBills = JSON.parse(storedBills).map((bill: any) => ({
+          ...bill,
+          dueDate: new Date(bill.dueDate),
+          paymentDate: bill.paymentDate ? new Date(bill.paymentDate) : undefined,
+        }));
+        setBills(parsedBills);
+      } else {
+        setBills(dummyBills);
+      }
+    } catch (error) {
+      console.error("Failed to load bills from localStorage", error);
+      setBills(dummyBills);
+    } finally {
+      setIsInitialLoad(false);
+    }
+  }, []);
+
+  // Save to localStorage on change
+  useEffect(() => {
+    if (!isInitialLoad) {
+      localStorage.setItem('bills', JSON.stringify(bills));
+    }
+  }, [bills, isInitialLoad]);
 
   useEffect(() => {
     if (window.location.hash === '#add') {
@@ -34,11 +60,6 @@ export default function BillsPage() {
   }, []);
 
   const handleAddBill = (billData: Omit<Bill, 'id' | 'status'>) => {
-    if (!user) {
-      toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in.' });
-      return;
-    }
-    
     const newBill: Bill = {
       ...billData,
       id: Date.now().toString(),
@@ -94,11 +115,7 @@ export default function BillsPage() {
         </div>
       </div>
 
-      {isLoading ? (
-        <div className="flex h-64 items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      ) : bills.length > 0 ? (
+      {bills.length > 0 ? (
         <BillList bills={bills} onUpdateStatus={handleUpdateBillStatus} />
       ) : (
         <EmptyState
