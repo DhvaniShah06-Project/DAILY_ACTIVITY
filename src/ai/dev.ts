@@ -1,5 +1,5 @@
-import { config } from 'dotenv';
-config();
+// import { config } from 'dotenv';
+// config();
 
 import '@/ai/flows/provide-bill-payment-tips.ts';
 import '@/ai/flows/generate-monthly-spending-summary.ts';
