@@ -12,8 +12,9 @@ import type { Bill, Expense, Task } from '@/lib/types';
 export const addTask = async (
   db: Firestore,
   userId: string,
-  task: Omit<Task, 'id' | 'isCompleted'>
+  task: Partial<Omit<Task, 'id' | 'isCompleted'>>
 ) => {
+  // Manually construct the data object to ensure no undefined fields are sent.
   const dataToAdd: { [key: string]: any } = {
     title: task.title,
     category: task.category,
@@ -22,8 +23,8 @@ export const addTask = async (
     createdAt: serverTimestamp(),
   };
 
-  // Only add 'ingredients' if it's provided as a non-empty array.
-  if (task.ingredients && Array.isArray(task.ingredients) && task.ingredients.length > 0) {
+  // Only include 'ingredients' if it is a valid, non-empty array.
+  if (Array.isArray(task.ingredients) && task.ingredients.length > 0 && task.ingredients.some(ing => ing.trim() !== '')) {
     dataToAdd.ingredients = task.ingredients;
   }
 
@@ -46,6 +47,7 @@ export const addBill = async (
   userId: string,
   bill: Omit<Bill, 'id' | 'status'>
 ) => {
+  // Manually construct the data object to ensure no undefined fields are sent.
   const dataToAdd: { [key: string]: any } = {
     name: bill.name,
     amount: bill.amount,
@@ -82,6 +84,7 @@ export const addExpense = async (
   userId: string,
   expense: Omit<Expense, 'id'>
 ) => {
+  // Manually construct the data object to ensure no undefined fields are sent.
   const dataToAdd: { [key: string]: any } = {
     amount: expense.amount,
     category: expense.category,
@@ -89,8 +92,8 @@ export const addExpense = async (
     createdAt: serverTimestamp(),
   };
 
-  // Only add 'notes' if it's a non-empty string.
-  if (expense.notes) {
+  // Only include 'notes' if it is a valid, non-empty string.
+  if (expense.notes && typeof expense.notes === 'string' && expense.notes.trim() !== '') {
     dataToAdd.notes = expense.notes;
   }
 

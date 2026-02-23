@@ -49,6 +49,9 @@ const suggestCookingTaskDishFlow = ai.defineFlow(
   },
   async (input) => {
     const { output } = await suggestCookingTaskDishPrompt(input);
-    return output!;
+    if (!output) {
+      throw new Error('The AI model failed to generate dish suggestions.');
+    }
+    return output;
   }
 );

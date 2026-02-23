@@ -72,6 +72,9 @@ const providePersonalizedSavingSuggestionsFlow = ai.defineFlow(
   },
   async (input) => {
     const {output} = await personalizedSavingSuggestionsPrompt(input);
-    return output!;
+    if (!output) {
+      throw new Error('The AI model failed to generate saving suggestions.');
+    }
+    return output;
   }
 );
