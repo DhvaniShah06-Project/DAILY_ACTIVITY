@@ -64,6 +64,7 @@ export default function TasksPage() {
     try {
       await addTask(firestore, user.uid, newTask);
       toast({ title: 'Success', description: 'Task added successfully.' });
+      (document.activeElement as HTMLElement)?.blur();
       setIsDialogOpen(false);
     } catch (error) {
       toast({ variant: 'destructive', title: 'Error', description: 'Failed to add task.' });

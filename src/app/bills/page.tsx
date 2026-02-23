@@ -54,6 +54,7 @@ export default function BillsPage() {
     try {
       await addBill(firestore, user.uid, newBill);
       toast({ title: 'Success', description: 'Bill added successfully.' });
+      (document.activeElement as HTMLElement)?.blur();
       setIsDialogOpen(false);
     } catch (error) {
       toast({ variant: 'destructive', title: 'Error', description: 'Failed to add bill.' });

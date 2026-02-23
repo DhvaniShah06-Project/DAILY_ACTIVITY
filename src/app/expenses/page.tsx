@@ -55,6 +55,7 @@ export default function ExpensesPage() {
     try {
       await addExpense(firestore, user.uid, newExpense);
       toast({ title: 'Success', description: 'Expense logged.' });
+      (document.activeElement as HTMLElement)?.blur();
       setIsDialogOpen(false);
     } catch (error) {
       toast({ variant: 'destructive', title: 'Error', description: 'Failed to log expense.' });
